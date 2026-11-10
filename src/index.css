@@ -1,0 +1,100 @@
+@import 'tailwindcss';
+
+/*
+  Palette, dark take: navy 40 (grounds, tiles), soft blue 30 (type, lines), coral 20 (glow, accents), white 10 (cards).
+*/
+@theme {
+  --color-ground: #070c1a;
+  --color-tile: #141c31;
+  --color-navy-deep: #0d1830;
+  --color-navy: #15223f;
+  --color-navy-raised: #1f2e4f;
+  --color-sky: #cfe2f1;
+  --color-sky-soft: #e9f1f8;
+  --color-mist: #a9b6cc;
+  --color-dim: #7f8da8;
+  --color-coral: #ee6a48;
+  --color-coral-deep: #c8502f;
+
+  --font-display: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    background: var(--color-ground);
+    color: var(--color-sky-soft);
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-ground);
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: var(--color-coral);
+    color: var(--color-ground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-coral);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+/* Coral light leaking in from an edge */
+@utility glow {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 9999px;
+  /* soft by its own stops; no blur filter, which repaints on every scroll frame */
+  background: radial-gradient(
+    closest-side,
+    rgb(238 106 72 / 0.75),
+    rgb(220 92 58 / 0.42) 35%,
+    rgb(200 80 47 / 0.16) 65%,
+    transparent
+  );
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+
+/* The coral light drifts slowly */
+@keyframes drift {
+  50% {
+    transform: translate3d(36px, -48px, 0) scale(1.08);
+  }
+}
+.glow {
+  animation: drift 16s ease-in-out infinite;
+  will-change: transform;
+}
+
+
+/* The coral dot (Cursor.jsx) replaces the system pointer on mouse devices.
+   The class is only set while that component is mounted, so the pointer never vanishes without it. */
+@media (hover: hover) and (pointer: fine) {
+  html.custom-cursor,
+  html.custom-cursor * {
+    cursor: none !important;
+  }
+}

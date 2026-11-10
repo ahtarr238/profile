@@ -1,0 +1,268 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>hero layers</title>
+    <!--
+      Draws the hero's parallax layers: dusk over the mountains around Bogor (Gunung Salak),
+      in the site's palette. Seeded, so every run gives the same picture.
+      window.exportLayers() returns { sky, far, near } as WebP data URLs (far and near keep alpha).
+      generate.mjs calls it and writes public/hero-layers/*.webp. Open this file to preview.
+    -->
+    <style>
+      body { margin: 0; background: #000; }
+      canvas { display: block; width: 100%; height: auto; }
+      #preview { position: relative; }
+      #preview canvas { position: absolute; inset: 0; }
+      #preview canvas:first-child { position: relative; }
+    </style>
+  </head>
+  <body>
+    <div id="preview"></div>
+    <script>
+      const W = 2400
+      const H = 1600
+      const C = {
+        ground: '#070c1a',
+        deep: '#0d1830',
+        navy: '#15223f',
+        raised: '#1f2e4f',
+        sky: '#cfe2f1',
+        soft: '#e9f1f8',
+        mist: '#a9b6cc',
+        coral: '#ee6a48',
+        coralDeep: '#c8502f',
+      }
+
+      // seeded random
+      const rng = (seed) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646
+
+      // 1D ridge: midpoint displacement, a few smoothing passes, plus named peaks
+      function ridge({ seed, base, rough, amp, peaks = [], n = 1024, smooth = 2 }) {
+        const r = rng(seed)
+        const y = new Float32Array(n + 1)
+        y[0] = (r() - 0.5) * amp
+        y[n] = (r() - 0.5) * amp
+        for (let step = n; step > 1; step /= 2) {
+          const s = (step / n) * amp
+          for (let i = step / 2; i < n; i += step) {
+            y[i] = (y[i - step / 2] + y[i + step / 2]) / 2 + (r() - 0.5) * s * rough
+          }
+        }
+        for (let k = 0; k < smooth; k++) for (let i = 1; i < n; i++) y[i] = (y[i - 1] + y[i] * 2 + y[i + 1]) / 4
+        return (x) => {
+          const t = Math.max(0, Math.min(1, x / W)) * n
+          const i = Math.floor(t)
+          const f = t - i
+          let v = base + (y[i] * (1 - f) + y[Math.min(n, i + 1)] * f)
+          for (const p of peaks) {
+            const d = Math.abs(x - p.x) / p.w
+            v -= p.h * Math.exp(-Math.pow(d, p.k || 1.35))
+          }
+          return v
+        }
+      }
+
+      function fillRidge(ctx, f, fill) {
+        ctx.beginPath()
+        ctx.moveTo(0, H)
+        for (let x = 0; x <= W; x += 3) ctx.lineTo(x, f(x))
+        ctx.lineTo(W, H)
+        ctx.closePath()
+        ctx.fillStyle = fill
+        ctx.fill()
+      }
+
+      function strokeRidge(ctx, f, style, width) {
+        ctx.beginPath()
+        for (let x = 0; x <= W; x += 3) x === 0 ? ctx.moveTo(x, f(x)) : ctx.lineTo(x, f(x))
+        ctx.strokeStyle = style
+        ctx.lineWidth = width
+        ctx.stroke()
+      }
+
+      function vgrad(ctx, y0, y1, stops) {
+        const g = ctx.createLinearGradient(0, y0, 0, y1)
+        stops.forEach(([o, c]) => g.addColorStop(o, c))
+        return g
+      }
+
+      // a band of mist that sits on the foot of a ridge
+      function mist(ctx, y, h, color, alpha) {
+        const g = ctx.createLinearGradient(0, y - h, 0, y + h)
+        g.addColorStop(0, 'rgba(0,0,0,0)')
+        g.addColorStop(0.5, color.replace(')', `, ${alpha})`).replace('rgb', 'rgba'))
+        g.addColorStop(1, 'rgba(0,0,0,0)')
+        ctx.fillStyle = g
+        ctx.fillRect(0, y - h, W, h * 2)
+      }
+
+      function canvas() {
+        const c = document.createElement('canvas')
+        c.width = W
+        c.height = H
+        return c
+      }
+
+      // the sun sits low, left of centre, behind the far range
+      const SUN = { x: W * 0.36, y: H * 0.6 }
+
+      // ---------- 1. sky (opaque)
+      function drawSky() {
+        const c = canvas()
+        const ctx = c.getContext('2d')
+        ctx.fillStyle = vgrad(ctx, 0, H, [
+          [0, '#060b18'],
+          [0.3, '#0d1830'],
+          [0.5, '#1f2e4f'],
+          [0.6, '#5a3a4a'],
+          [0.68, '#b5543a'],
+          [0.75, '#c8502f'],
+          [1, '#2a1a24'],
+        ])
+        ctx.fillRect(0, 0, W, H)
+
+        // warm light pooling around the sun
+        let g = ctx.createRadialGradient(SUN.x, SUN.y, 0, SUN.x, SUN.y, W * 0.55)
+        g.addColorStop(0, 'rgba(238,106,72,0.75)')
+        g.addColorStop(0.25, 'rgba(238,106,72,0.3)')
+        g.addColorStop(1, 'rgba(238,106,72,0)')
+        ctx.fillStyle = g
+        ctx.fillRect(0, 0, W, H)
+
+        // the sun disc, soft edged
+        g = ctx.createRadialGradient(SUN.x, SUN.y, 0, SUN.x, SUN.y, 150)
+        g.addColorStop(0, 'rgba(255,214,190,1)')
+        g.addColorStop(0.55, 'rgba(250,150,110,0.95)')
+        g.addColorStop(0.75, 'rgba(238,106,72,0.5)')
+        g.addColorStop(1, 'rgba(238,106,72,0)')
+        ctx.fillStyle = g
+        ctx.beginPath()
+        ctx.arc(SUN.x, SUN.y, 150, 0, Math.PI * 2)
+        ctx.fill()
+
+        // thin cloud streaks lit from below
+        const r = rng(11)
+        for (let i = 0; i < 9; i++) {
+          const y = H * (0.36 + r() * 0.24)
+          const x = r() * W
+          const w = 300 + r() * 700
+          const warm = y > H * 0.48
+          ctx.fillStyle = warm ? `rgba(238,120,90,${0.08 + r() * 0.1})` : `rgba(207,226,241,${0.04 + r() * 0.06})`
+          ctx.beginPath()
+          ctx.ellipse(x, y, w, 3 + r() * 6, 0, 0, Math.PI * 2)
+          ctx.fill()
+        }
+
+        // stars in the cold top of the sky
+        for (let i = 0; i < 260; i++) {
+          const y = Math.pow(r(), 1.8) * H * 0.42
+          const a = (1 - y / (H * 0.42)) * (0.25 + r() * 0.6)
+          ctx.fillStyle = `rgba(233,241,248,${a})`
+          ctx.beginPath()
+          ctx.arc(r() * W, y, 0.6 + r() * 1.6, 0, Math.PI * 2)
+          ctx.fill()
+        }
+        return c
+      }
+
+      // ---------- 2. far range: Gunung Salak and its neighbours, in haze (alpha)
+      function drawFar() {
+        const c = canvas()
+        const ctx = c.getContext('2d')
+
+        // farthest line of hills, nearly the colour of the sky
+        const f1 = ridge({ seed: 21, base: H * 0.63, rough: 0.9, amp: 120, smooth: 3 })
+        fillRidge(ctx, f1, vgrad(ctx, H * 0.55, H, [[0, 'rgba(120,96,120,0.75)'], [0.4, 'rgba(70,70,100,0.9)'], [1, 'rgba(40,46,74,1)']]))
+        mist(ctx, H * 0.7, 60, 'rgb(238,140,110)', 0.25)
+
+        // Gunung Salak: a broad massif with a crown of jagged peaks
+        const salak = ridge({
+          seed: 7,
+          base: H * 0.74,
+          rough: 1.7,
+          amp: 170,
+          smooth: 0,
+          peaks: [
+            { x: W * 0.6, w: W * 0.17, h: H * 0.19, k: 1.15 },
+            { x: W * 0.555, w: W * 0.03, h: H * 0.06, k: 1 },
+            { x: W * 0.635, w: W * 0.025, h: H * 0.07, k: 1 },
+            { x: W * 0.7, w: W * 0.035, h: H * 0.04, k: 1 },
+            { x: W * 0.5, w: W * 0.04, h: H * 0.025, k: 1 },
+          ],
+        })
+        fillRidge(ctx, salak, vgrad(ctx, H * 0.48, H, [[0, 'rgba(84,102,140,1)'], [0.35, 'rgba(46,62,98,1)'], [1, 'rgba(24,36,64,1)']]))
+        // sunset light catching the edges
+        strokeRidge(ctx, salak, 'rgba(238,140,110,0.45)', 2)
+
+        // a second range on the left, Pangrango-like, a step nearer
+        const f2 = ridge({
+          seed: 33,
+          base: H * 0.8,
+          rough: 1.45,
+          amp: 150,
+          smooth: 1,
+          peaks: [{ x: W * 0.14, w: W * 0.16, h: H * 0.15 }],
+        })
+        fillRidge(ctx, f2, vgrad(ctx, H * 0.6, H, [[0, 'rgba(40,56,92,1)'], [1, 'rgba(18,28,52,1)']]))
+        strokeRidge(ctx, f2, 'rgba(238,140,110,0.3)', 2)
+        mist(ctx, H * 0.84, 70, 'rgb(169,182,204)', 0.22)
+        return c
+      }
+
+      // ---------- 4. near hills with pines (alpha, opaque at the foot)
+      function drawNear() {
+        const c = canvas()
+        const ctx = c.getContext('2d')
+
+        const mid = ridge({ seed: 51, base: H * 0.83, rough: 1.0, amp: 120, smooth: 2, peaks: [{ x: W * 0.85, w: W * 0.12, h: H * 0.07 }] })
+        fillRidge(ctx, mid, '#111c36')
+        strokeRidge(ctx, mid, 'rgba(238,106,72,0.35)', 2)
+        mist(ctx, H * 0.9, 50, 'rgb(169,182,204)', 0.12)
+
+        const near = ridge({ seed: 64, base: H * 0.91, rough: 0.8, amp: 90, smooth: 3, peaks: [{ x: W * 0.12, w: W * 0.18, h: H * 0.06 }] })
+        fillRidge(ctx, near, '#0a1226')
+
+        // pines along the near ridge
+        const r = rng(77)
+        const tree = (x, baseY, h, color) => {
+          const w = h * 0.34
+          ctx.fillStyle = color
+          ctx.beginPath()
+          const tiers = 5
+          for (let t = 0; t < tiers; t++) {
+            const ty = baseY - (h * t) / tiers
+            const tw = w * (1 - t / (tiers + 1))
+            ctx.moveTo(x - tw, ty)
+            ctx.lineTo(x, ty - (h / tiers) * 1.9)
+            ctx.lineTo(x + tw, ty)
+          }
+          ctx.fill()
+          ctx.fillRect(x - 3, baseY - 4, 6, 14)
+        }
+        for (let x = 0; x < W; x += 18 + r() * 34) {
+          if (r() < 0.35) continue
+          const h = 40 + r() * 120
+          tree(x, mid(x) + 6, h * 0.7, '#111c36')
+        }
+        for (let x = 0; x < W; x += 14 + r() * 26) {
+          if (r() < 0.2) continue
+          const h = 60 + r() * 160
+          tree(x, near(x) + 8, h, '#0a1226')
+        }
+
+        // fade the foot into the page ground so the hero hands over cleanly
+        ctx.fillStyle = vgrad(ctx, H * 0.88, H, [[0, 'rgba(7,12,26,0)'], [1, 'rgba(7,12,26,1)']])
+        ctx.fillRect(0, H * 0.88, W, H * 0.12)
+        return c
+      }
+
+      const layers = { sky: drawSky(), far: drawFar(), near: drawNear() }
+      const preview = document.getElementById('preview')
+      Object.values(layers).forEach((c) => preview.appendChild(c))
+
+      window.exportLayers = () =>
+        Object.fromEntries(Object.entries(layers).map(([k, c]) => [k, c.toDataURL('image/webp', k === 'sky' ? 0.82 : 0.86)]))
+    </script>
+  </body>
+</html>

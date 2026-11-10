@@ -1,0 +1,59 @@
+import { ArrowUp } from 'lucide-react'
+import { nav, profile, socials } from '../data/content'
+import { scrollToId, useLenisInstance } from '../hooks/useLenis'
+
+export default function Footer() {
+  const lenis = useLenisInstance()
+  return (
+    <footer className="relative overflow-hidden border-t border-sky-soft/10">
+      <div className="mx-auto flex max-w-[1320px] flex-col gap-6 px-6 pt-10 md:flex-row md:items-center md:justify-between md:px-10">
+        <ul className="flex flex-wrap gap-x-6 text-[14px] text-mist">
+          {nav.map((n) => (
+            <li key={n.id}>
+              <a
+                href={`#${n.id}`}
+                onClick={(e) => {
+                  e.preventDefault()
+                  scrollToId(lenis, n.id)
+                }}
+                className="inline-flex min-h-11 items-center transition-colors duration-150 ease-out hover:text-sky-soft"
+              >
+                {n.label}
+              </a>
+            </li>
+          ))}
+          {socials.map((s) => (
+            <li key={s.label}>
+              <a href={s.href} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center transition-colors duration-150 ease-out hover:text-sky-soft">
+                {s.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <div className="flex items-center gap-6 text-[14px] text-mist">
+          <span>© 2026 {profile.name}</span>
+          <a
+            href="#top"
+            onClick={(e) => {
+              e.preventDefault()
+              scrollToId(lenis, 'top')
+            }}
+            className="inline-flex min-h-11 items-center gap-2 transition-colors duration-150 ease-out hover:text-sky-soft"
+          >
+            Back to top
+            <ArrowUp size={16} strokeWidth={1.5} aria-hidden="true" />
+          </a>
+        </div>
+      </div>
+
+      {/* the name again, cut by the bottom edge */}
+      <p
+        aria-hidden="true"
+        className="font-display mx-auto -mb-[0.32em] max-w-[1320px] px-6 pt-6 text-[clamp(112px,25vw,380px)] leading-[0.8] font-medium tracking-[-0.055em] text-tile select-none md:px-10"
+      >
+        {profile.short}
+        <span className="text-coral/40">.</span>
+      </p>
+    </footer>
+  )
+}
