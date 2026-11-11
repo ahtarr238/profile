@@ -19,6 +19,12 @@ const slugify = (s) =>
     .replace(/-+$/g, '')
 
 const today = () => new Date().toISOString().slice(0, 10)
+const splitTags = (text) =>
+  String(text || '')
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .slice(0, 8)
 const httpsOnly = (v) => !v || /^https:\/\/[^\s"'<>]+$/.test(v)
 
 const KINDS = {
@@ -27,7 +33,7 @@ const KINDS = {
     one: 'project',
     thumb: (r) => r.poster,
     meta: (r) => [r.role, (r.tags || []).join(' · ')].filter(Boolean).join(' — '),
-    blank: () => ({ id: '', title: '', description: '', tags: [], role: '', video: '', poster: '', published: true }),
+    blank: () => ({ id: '', title: '', description: '', tags: [], title_id: '', description_id: '', tags_id: [], role: '', video: '', poster: '', published: true }),
   },
   certificates: {
     label: 'Certificates',
@@ -72,7 +78,7 @@ function FilePick({ label, hint, accept, onPick, preview, kind = 'image' }) {
 /** Add/edit form. Files are prepared here and handed back; nothing reaches GitHub until Publish. */
 function Editor({ kind, row, taken, previewOf, onClose, onDone }) {
   const isNew = !row.id
-  const [v, setV] = useState(() => ({ ...row, tagsText: (row.tags || []).join(', ') }))
+  const [v, setV] = useState(() => ({ ...row, tagsText: (row.tags || []).join(', '), tagsIdText: (row.tags_id || []).join(', ') }))
   const [idTouched, setIdTouched] = useState(!isNew)
   const [files, setFiles] = useState({}) // field -> { blob, ext, preview }
   const [busy, setBusy] = useState('')
@@ -142,11 +148,11 @@ function Editor({ kind, row, taken, previewOf, onClose, onDone }) {
             id,
             title,
             description: v.description.trim(),
-            tags: v.tagsText
-              .split(',')
-              .map((t) => t.trim())
-              .filter(Boolean)
-              .slice(0, 8),
+            tags: splitTags(v.tagsText),
+            // Bahasa Indonesia versions; left empty, the site shows the English ones
+            title_id: (v.title_id || '').trim(),
+            description_id: (v.description_id || '').trim(),
+            tags_id: splitTags(v.tagsIdText),
             role: v.role.trim(),
             video: v.video,
             poster: v.poster,
@@ -224,6 +230,15 @@ function Editor({ kind, row, taken, previewOf, onClose, onDone }) {
               <Field id="description" as="textarea" label="Description" value={v.description} onChange={set('description')} maxLength={1200} />
               <Field id="tags" label="Tags" hint="Comma separated, up to 8." value={v.tagsText} onChange={set('tagsText')} />
               <Field id="role" label="Your role (optional)" hint="Shows as a badge, e.g. Contributor." value={v.role || ''} onChange={set('role')} maxLength={40} />
+
+              {/* shown to visitors who switch the site to Bahasa Indonesia */}
+              <fieldset className="grid gap-5 rounded-[6px] border border-sky-soft/15 p-4">
+                <legend className="px-1 text-[13px] text-sky-soft">Bahasa Indonesia (optional)</legend>
+                <p className="-mt-2 text-[12px] text-dim">Leave any of these empty and visitors reading in Indonesian see the English text instead.</p>
+                <Field id="title_id" label="Judul" value={v.title_id || ''} onChange={set('title_id')} maxLength={160} />
+                <Field id="description_id" as="textarea" label="Deskripsi" value={v.description_id || ''} onChange={set('description_id')} maxLength={1200} />
+                <Field id="tags_id" label="Tag" hint="Pisahkan dengan koma, maksimal 8." value={v.tagsIdText} onChange={set('tagsIdText')} />
+              </fieldset>
             </>
           )}
 

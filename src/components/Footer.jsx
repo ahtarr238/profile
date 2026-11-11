@@ -1,9 +1,11 @@
 import { ArrowUp } from 'lucide-react'
 import { nav, profile, socials } from '../data/content'
 import { scrollToId, useLenisInstance } from '../hooks/useLenis'
+import { useLang } from '../i18n/context'
 
 export default function Footer() {
   const lenis = useLenisInstance()
+  const { t } = useLang()
   return (
     <footer className="relative overflow-hidden border-t border-sky-soft/10">
       <div className="mx-auto flex max-w-[1320px] flex-col gap-6 px-6 pt-10 md:flex-row md:items-center md:justify-between md:px-10">
@@ -18,7 +20,7 @@ export default function Footer() {
                 }}
                 className="inline-flex min-h-11 items-center transition-colors duration-150 ease-out hover:text-sky-soft"
               >
-                {n.label}
+                {t(`nav.${n.id}`)}
               </a>
             </li>
           ))}
@@ -40,7 +42,7 @@ export default function Footer() {
             }}
             className="inline-flex min-h-11 items-center gap-2 transition-colors duration-150 ease-out hover:text-sky-soft"
           >
-            Back to top
+            {t('footer.top')}
             <ArrowUp size={16} strokeWidth={1.5} aria-hidden="true" />
           </a>
         </div>

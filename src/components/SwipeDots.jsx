@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useLang } from '../i18n/context'
 
 /** Phone-only position marker for a horizontal swipe row: "01 / 06", dots, and a hint. */
 export default function SwipeDots({ scrollerRef, count }) {
   const [active, setActive] = useState(0)
+  const { t } = useLang()
 
   useEffect(() => {
     const el = scrollerRef.current
@@ -41,7 +43,7 @@ export default function SwipeDots({ scrollerRef, count }) {
           />
         ))}
       </span>
-      <span className="ml-auto text-[13px] text-mist">Swipe</span>
+      <span className="ml-auto text-[13px] text-mist">{t('projects.swipe')}</span>
     </div>
   )
 }

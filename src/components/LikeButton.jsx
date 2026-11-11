@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { ThumbsUp } from 'lucide-react'
+import { useLang } from '../i18n/context'
 
 const ease = [0.22, 1, 0.36, 1]
 const KEY = 'ahtar-liked-on' // the day this browser last liked; the server also counts one per day
@@ -22,6 +23,7 @@ function sendLike() {
 
 /** A round thumbs-up in the bottom-right corner: one tap says "nice site". */
 export default function LikeButton() {
+  const { t } = useLang()
   const [liked, setLiked] = useState(likedToday)
   const [burst, setBurst] = useState(0) // bumps on each fresh like, replays the +1
   const [note, setNote] = useState('')
@@ -41,12 +43,12 @@ export default function LikeButton() {
 
   const like = () => {
     if (liked) {
-      setNote('Already liked today. Thank you!')
+      setNote(t('like.already'))
       return
     }
     setLiked(true)
     setBurst((b) => b + 1)
-    setNote('Thanks for the like!')
+    setNote(t('like.thanks'))
     try {
       localStorage.setItem(KEY, today())
     } catch {
@@ -66,8 +68,8 @@ export default function LikeButton() {
         type="button"
         onClick={like}
         aria-pressed={liked}
-        aria-label={liked ? 'You liked this website' : 'Like this website'}
-        title={liked ? 'You liked this website' : 'Like this website'}
+        aria-label={liked ? t('like.liked') : t('like.like')}
+        title={liked ? t('like.liked') : t('like.like')}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.88 }}
         className={`relative grid size-13 place-items-center rounded-full border shadow-[0_10px_30px_rgb(0_0_0/0.35)] transition-colors duration-200 ease-out ${

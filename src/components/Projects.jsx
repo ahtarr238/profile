@@ -6,6 +6,7 @@ import Tag from './Tag'
 import RevealText from './RevealText'
 import SwipeDots from './SwipeDots'
 import { trackEvent } from '../lib/track'
+import { useLang } from '../i18n/context'
 
 const ease = [0.22, 1, 0.36, 1]
 
@@ -15,6 +16,8 @@ function ProjectVideo({ project }) {
   const frameRef = useRef(null)
   const open = useInView(frameRef, { once: true, amount: 0.05 })
   const [muted, setMuted] = useState(true)
+  const { t, pick } = useLang()
+  const title = pick(project, 'title')
 
   useEffect(() => {
     const video = ref.current
@@ -98,7 +101,7 @@ function ProjectVideo({ project }) {
             playsInline
             // nothing downloads until the video scrolls into view (play() then fetches it); the poster shows meanwhile
             preload="none"
-            aria-label={`Intro video for ${project.title}`}
+            aria-label={t('projects.video', { title })}
             onClick={() => {
               // phones: a tap opens it big; desktop keeps the buttons for that
               if (window.matchMedia('(max-width: 767px)').matches) expand()
@@ -110,13 +113,13 @@ function ProjectVideo({ project }) {
               type="button"
               onClick={toggleSound}
               aria-pressed={!muted}
-              aria-label={muted ? 'Sound on' : 'Sound off'}
+              aria-label={muted ? t('projects.soundOn') : t('projects.soundOff')}
               className={`${control} sm:w-auto sm:px-3`}
             >
               {muted ? <VolumeX size={16} strokeWidth={1.75} aria-hidden="true" /> : <Volume2 size={16} strokeWidth={1.75} aria-hidden="true" />}
-              <span className="hidden sm:inline">{muted ? 'Sound on' : 'Sound off'}</span>
+              <span className="hidden sm:inline">{muted ? t('projects.soundOn') : t('projects.soundOff')}</span>
             </button>
-            <button type="button" onClick={expand} aria-label={`Watch ${project.title} full screen`} className={control}>
+            <button type="button" onClick={expand} aria-label={t('projects.fullscreen', { title })} className={control}>
               <Maximize2 size={16} strokeWidth={1.75} aria-hidden="true" />
             </button>
           </div>
@@ -128,6 +131,7 @@ function ProjectVideo({ project }) {
 
 export default function Projects() {
   const rowRef = useRef(null)
+  const { t, pick } = useLang()
   if (!projects.length) return null
 
   return (
@@ -135,7 +139,7 @@ export default function Projects() {
       <div aria-hidden="true" className="glow -right-56 top-[12%] h-[700px] w-[460px] opacity-70" />
 
       <div className="relative mx-auto max-w-[1320px] px-6 pb-24 md:px-10 md:pb-40">
-        <RevealText text="Projects" accent="." className="font-display text-[clamp(72px,15vw,230px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft" />
+        <RevealText text={t('projects.title')} accent="." className="font-display text-[clamp(72px,15vw,230px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft" />
 
         {/* phones: one project per swipe; desktop: alternating rows */}
         <ol
@@ -161,18 +165,18 @@ export default function Projects() {
                   {/* set role: 'Contributor' on projects Ahtar worked on as part of a team */}
                   {p.role && (
                     <span className="inline-flex h-7 items-center rounded-[4px] border border-coral/70 px-2.5 text-[12px] text-coral">
-                      {p.role}
+                      {p.role === 'Contributor' ? t('projects.contributor') : p.role}
                     </span>
                   )}
                 </div>
                 <h3 className="font-display mt-2 text-[30px] leading-[1.05] font-normal tracking-[-0.03em] text-sky-soft md:text-[44px]">
-                  {p.title}
+                  {pick(p, 'title')}
                 </h3>
-                <p className="mt-4 text-[15px] leading-7 text-mist md:mt-5 md:text-[16px]">{p.description}</p>
+                <p className="mt-4 text-[15px] leading-7 text-mist md:mt-5 md:text-[16px]">{pick(p, 'description')}</p>
                 <ul className="mt-5 flex flex-wrap gap-2 md:mt-6">
-                  {p.tags.map((t) => (
-                    <li key={t}>
-                      <Tag>{t}</Tag>
+                  {pick(p, 'tags').map((tag) => (
+                    <li key={tag}>
+                      <Tag>{tag}</Tag>
                     </li>
                   ))}
                 </ul>

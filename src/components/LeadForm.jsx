@@ -4,15 +4,18 @@ import { ArrowLeft, ArrowRight, Check, Copy, Mail, RotateCcw } from 'lucide-reac
 import { contact } from '../data/content'
 import { WhatsappIcon } from './BrandIcons'
 import { trackEvent } from '../lib/track'
+import { useLang } from '../i18n/context'
 
 const ease = [0.22, 1, 0.36, 1]
 
 // One question at a time, mostly taps. The answers end up as a ready-to-send
 // message in WhatsApp or email, so nothing depends on a form backend.
-const REASONS = ['Hiring for a role', 'A project for my business', 'Working together on something', 'Just saying hi']
-const ROLES = ['Full-time', 'Internship', 'Freelance or contract', 'Part-time']
-const NEEDS = ['Website or landing page', 'Web app or dashboard', 'Mobile app', 'AI feature or automation', 'Not sure yet']
-const TIMELINES = ['As soon as possible', 'Within a month', 'In a few months', 'Just exploring']
+// Answers are stored as keys; the words come from src/i18n/dict.js (form.*), so switching
+// language mid-form keeps every choice.
+const REASONS = ['hire', 'project', 'collab', 'hi']
+const ROLES = ['fulltime', 'internship', 'freelance', 'parttime']
+const NEEDS = ['website', 'webapp', 'mobile', 'ai', 'unsure']
+const TIMELINES = ['asap', 'month', 'months', 'exploring']
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const phonePattern = /^\+?[\d\s-]{8,}$/
@@ -75,6 +78,7 @@ function Input({ label, error, as = 'input', id, ...props }) {
 }
 
 export default function LeadForm() {
+  const { t } = useLang()
   const [a, setA] = useState(EMPTY)
   const [step, setStep] = useState(0)
   const [dir, setDir] = useState(1)
@@ -82,14 +86,17 @@ export default function LeadForm() {
   const [copied, setCopied] = useState(false)
   const timer = useRef(null)
 
-  const hiring = a.reason === REASONS[0]
+  const hiring = a.reason === 'hire'
+  const label = {
+    reason: (k) => t(`form.reasons.${k}`),
+    need: (k) => (hiring ? t(`form.roles.${k}`) : t(`form.needs.${k}`)),
+    timeline: (k) => t(`form.timelines.${k}`),
+  }
   const steps = [
-    { q: 'What brings you here?', hint: 'Pick one', ok: !!a.reason },
-    hiring
-      ? { q: 'What kind of role?', hint: 'Select all that apply', ok: a.needs.length > 0 }
-      : { q: 'What do you need help with?', hint: 'Select all that apply', ok: a.needs.length > 0 },
-    { q: 'When would you like to start?', hint: 'Pick one', ok: !!a.timeline },
-    { q: 'Who should I reply to?', hint: 'Email or WhatsApp, whichever you check more', ok: true },
+    { q: t('form.q.reason'), hint: t('form.pickOne'), ok: !!a.reason },
+    { q: hiring ? t('form.q.role') : t('form.q.need'), hint: t('form.pickMany'), ok: a.needs.length > 0 },
+    { q: t('form.q.timeline'), hint: t('form.pickOne'), ok: !!a.timeline },
+    { q: t('form.q.reach'), hint: t('form.reachHint'), ok: true },
   ]
   const total = steps.length
   const done = step === total
@@ -115,24 +122,25 @@ export default function LeadForm() {
   const finish = (e) => {
     e.preventDefault()
     const next = {}
-    if (!a.name.trim()) next.name = 'Enter your name'
+    if (!a.name.trim()) next.name = 'errName'
     const reach = a.reach.trim()
-    if (!emailPattern.test(reach) && !phonePattern.test(reach)) next.reach = 'Enter an email or a WhatsApp number'
+    if (!emailPattern.test(reach) && !phonePattern.test(reach)) next.reach = 'errReach'
     setErrors(next)
     if (!Object.keys(next).length) go(total)
   }
 
+  // written in the visitor's language
   const summary = [
-    `Hi Ahtar, I'm ${a.name.trim()}.`,
+    t('form.summary.hello', { name: a.name.trim() }),
     '',
-    `Here for: ${a.reason}`,
-    `${hiring ? 'Role' : 'Need'}: ${a.needs.join(', ')}`,
-    `Start: ${a.timeline}`,
-    `Reach me at: ${a.reach.trim()}`,
+    `${t('form.summary.reason')}: ${a.reason ? label.reason(a.reason) : ''}`,
+    `${hiring ? t('form.summary.role') : t('form.summary.need')}: ${a.needs.map(label.need).join(', ')}`,
+    `${t('form.summary.start')}: ${a.timeline ? label.timeline(a.timeline) : ''}`,
+    `${t('form.summary.reach')}: ${a.reach.trim()}`,
     ...(a.note.trim() ? ['', a.note.trim()] : []),
   ].join('\n')
   const waHref = `https://wa.me/${contact.phoneHref.replace(/\D/g, '')}?text=${encodeURIComponent(summary)}`
-  const mailHref = `mailto:${contact.email}?subject=${encodeURIComponent(`${a.reason} · ${a.name.trim()}`)}&body=${encodeURIComponent(summary)}`
+  const mailHref = `mailto:${contact.email}?subject=${encodeURIComponent(`${a.reason ? label.reason(a.reason) : ''} · ${a.name.trim()}`)}&body=${encodeURIComponent(summary)}`
 
   const copy = async () => {
     try {
@@ -154,12 +162,12 @@ export default function LeadForm() {
   const options = step === 1 ? (hiring ? ROLES : NEEDS) : null
 
   return (
-    <div className="relative border-[1.5px] border-coral bg-tile/90 p-6 md:p-9" aria-label="Contact questions" role="region">
+    <div className="relative border-[1.5px] border-coral bg-tile/90 p-6 md:p-9" aria-label={t('form.region')} role="region">
       <Slashes className="absolute -top-5 left-5 h-8 text-coral" />
 
       {/* progress */}
       <div className="flex items-center justify-between text-[13px] text-mist tabular-nums">
-        <span>{done ? 'Ready to send' : 'One question at a time'}</span>
+        <span>{done ? t('form.ready') : t('form.oneAtATime')}</span>
         <span aria-live="polite">
           {Math.min(step + 1, total)} / {total}
         </span>
@@ -199,7 +207,7 @@ export default function LeadForm() {
               <div className="mt-6 flex flex-wrap gap-2.5">
                 {REASONS.map((r) => (
                   <Choice key={r} on={a.reason === r} onClick={() => pickOne('reason', r)}>
-                    {r}
+                    {label.reason(r)}
                   </Choice>
                 ))}
               </div>
@@ -209,7 +217,7 @@ export default function LeadForm() {
               <div className="mt-6 flex flex-wrap gap-2.5">
                 {options.map((n) => (
                   <Choice key={n} multi on={a.needs.includes(n)} onClick={() => toggle(n)}>
-                    {n}
+                    {label.need(n)}
                   </Choice>
                 ))}
               </div>
@@ -217,9 +225,9 @@ export default function LeadForm() {
 
             {step === 2 && (
               <div className="mt-6 flex flex-wrap gap-2.5">
-                {TIMELINES.map((t) => (
-                  <Choice key={t} on={a.timeline === t} onClick={() => pickOne('timeline', t)}>
-                    {t}
+                {TIMELINES.map((k) => (
+                  <Choice key={k} on={a.timeline === k} onClick={() => pickOne('timeline', k)}>
+                    {label.timeline(k)}
                   </Choice>
                 ))}
               </div>
@@ -228,29 +236,38 @@ export default function LeadForm() {
             {step === 3 && (
               <form id="lead-last" onSubmit={finish} noValidate className="mt-6 grid gap-5">
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <Input id="lead-name" label="Your name" name="name" autoComplete="name" value={a.name} onChange={type} error={errors.name} />
+                  <Input
+                    id="lead-name"
+                    label={t('form.name')}
+                    name="name"
+                    autoComplete="name"
+                    value={a.name}
+                    onChange={type}
+                    error={errors.name && t(`form.${errors.name}`)}
+                  />
                   <Input
                     id="lead-reach"
-                    label="Email or WhatsApp"
+                    label={t('form.reach')}
                     name="reach"
                     autoComplete="email"
                     placeholder="you@company.com"
                     value={a.reach}
                     onChange={type}
-                    error={errors.reach}
+                    error={errors.reach && t(`form.${errors.reach}`)}
                   />
                 </div>
-                <Input id="lead-note" label="Anything else? (optional)" name="note" as="textarea" rows={2} value={a.note} onChange={type} />
+                <Input id="lead-note" label={t('form.note')} name="note" as="textarea" rows={2} value={a.note} onChange={type} />
               </form>
             )}
 
             {done && (
               <div>
                 <h3 className="font-display text-[30px] leading-[1.1] tracking-[-0.02em] text-sky-soft md:text-[38px]">
-                  Thanks, {a.name.trim().split(' ')[0]}<span className="text-coral">.</span>
+                  {t('form.thanks', { name: a.name.trim().split(' ')[0] })}
+                  <span className="text-coral">.</span>
                 </h3>
                 <p className="mt-3 max-w-[26rem] text-[15px] leading-6 text-mist">
-                  Your answers are written up below. Send them the way you like, and I’ll get back to you personally.
+                  {t('form.doneText')}
                 </p>
                 <pre className="mt-5 max-h-48 overflow-auto rounded-[4px] bg-ground/70 p-4 font-sans text-[13px] leading-5 whitespace-pre-wrap text-sky-soft/90">
                   {summary}
@@ -264,7 +281,7 @@ export default function LeadForm() {
                     className="inline-flex h-12 items-center gap-2.5 rounded-[4px] bg-coral px-5 text-[15px] font-medium text-ground transition-[background-color,transform] duration-150 ease-out hover:bg-[#f27c5d] active:scale-[0.97]"
                   >
                     <WhatsappIcon size={18} />
-                    Send on WhatsApp
+                    {t('form.sendWa')}
                   </a>
                   <a
                     href={mailHref}
@@ -272,7 +289,7 @@ export default function LeadForm() {
                     className="inline-flex h-12 items-center gap-2.5 rounded-[4px] border border-sky-soft/60 px-5 text-[15px] text-sky-soft transition-colors duration-150 ease-out hover:bg-sky-soft hover:text-ground"
                   >
                     <Mail size={17} strokeWidth={1.75} aria-hidden="true" />
-                    Send by email
+                    {t('form.sendEmail')}
                   </a>
                   <button
                     type="button"
@@ -280,7 +297,7 @@ export default function LeadForm() {
                     className="inline-flex h-12 items-center gap-2 px-2 text-[14px] text-mist transition-colors duration-150 ease-out hover:text-sky-soft"
                   >
                     {copied ? <Check size={16} strokeWidth={1.75} aria-hidden="true" /> : <Copy size={16} strokeWidth={1.75} aria-hidden="true" />}
-                    <span aria-live="polite">{copied ? 'Copied' : 'Copy'}</span>
+                    <span aria-live="polite">{copied ? t('form.copied') : t('form.copy')}</span>
                   </button>
                 </div>
               </div>
@@ -298,11 +315,11 @@ export default function LeadForm() {
             className="inline-flex h-11 items-center gap-2 text-[14px] text-mist transition-colors duration-150 ease-out hover:text-sky-soft"
           >
             {done ? <RotateCcw size={16} strokeWidth={1.75} aria-hidden="true" /> : <ArrowLeft size={16} strokeWidth={1.75} aria-hidden="true" />}
-            {done ? 'Start again' : 'Back'}
+            {done ? t('form.restart') : t('form.back')}
           </button>
         ) : (
           <span className="text-[13px] text-mist">
-            <span className="max-sm:hidden">[ open to new opportunities ]</span>
+            <span className="max-sm:hidden">{t('form.open')}</span>
           </span>
         )}
 
@@ -314,7 +331,7 @@ export default function LeadForm() {
             disabled={!steps[step].ok}
             className="group inline-flex h-12 items-center gap-2.5 rounded-[4px] bg-coral px-5 text-[15px] font-medium text-ground transition-[background-color,opacity,transform] duration-150 ease-out hover:bg-[#f27c5d] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-35"
           >
-            {step === 3 ? 'Finish' : 'Continue'}
+            {step === 3 ? t('form.finish') : t('form.continue')}
             <ArrowRight size={17} strokeWidth={1.75} aria-hidden="true" className="transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
           </button>
         )}

@@ -2,14 +2,9 @@ import { motion } from 'motion/react'
 import { about, certificates, profile, projects, tools } from '../data/content'
 import RevealText from './RevealText'
 import CountUp from './CountUp'
+import { useLang } from '../i18n/context'
 
 const ease = [0.22, 1, 0.36, 1]
-
-const details = [
-  { label: 'Based in', value: profile.location },
-  { label: 'Studying', value: `Informatics, ${profile.school}` },
-  { label: 'Role', value: profile.role },
-]
 
 const rise = (delay = 0) => ({
   initial: { opacity: 0, y: 28 },
@@ -19,7 +14,13 @@ const rise = (delay = 0) => ({
 })
 
 export default function About() {
-  const [lead, ...rest] = about.paragraphs
+  const { t } = useLang()
+  const [lead, ...rest] = t('about.paragraphs')
+  const details = [
+    { label: t('about.details.based'), value: t('profile.location') },
+    { label: t('about.details.studying'), value: t('about.studyingValue', { school: profile.school }) },
+    { label: t('about.details.role'), value: t('profile.role') },
+  ]
   // the two counts follow whatever is published, so they never go stale after an edit in /admin
   const counts = { projects: projects.length, certificates: certificates.length }
   const stats = about.stats.map((s) => (s.count ? { ...s, value: String(counts[s.count]) } : s))
@@ -29,9 +30,9 @@ export default function About() {
       <div aria-hidden="true" className="glow -right-64 bottom-0 h-[620px] w-[520px] opacity-50" />
 
       <div className="relative mx-auto max-w-[1320px] px-6 pt-12 pb-20 md:px-10 md:pt-24 md:pb-36">
-        <p className="mb-4 text-[15px] font-medium text-coral">About</p>
+        <p className="mb-4 text-[15px] font-medium text-coral">{t('about.eyebrow')}</p>
         <RevealText
-          text="About me"
+          text={t('about.title')}
           className="font-display text-[clamp(64px,10vw,160px)] leading-[0.9] font-normal tracking-[-0.05em] text-sky-soft"
         />
 
@@ -42,7 +43,7 @@ export default function About() {
             <div className="group overflow-hidden rounded-[8px] bg-tile">
               <img
                 src={profile.photo}
-                alt={`Portrait of ${profile.name}`}
+                alt={t('about.portraitAlt', { name: profile.name })}
                 width="640"
                 height="850"
                 loading="lazy"
@@ -75,20 +76,20 @@ export default function About() {
             <ul className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 md:mt-14">
               {stats.map((s, i) => (
                 <motion.li
-                  key={s.label}
+                  key={s.key}
                   {...rise(0.06 * i)}
                   className="flex h-28 flex-col justify-between rounded-[6px] bg-tile p-4 transition-colors md:h-36 md:p-5 duration-200 ease-out hover:bg-navy"
                 >
                   <span className="font-display text-[40px] leading-none font-light text-sky-soft md:text-[48px]">
                     <CountUp value={s.value} />
                   </span>
-                  <span className="text-[13px] leading-5 text-mist">{s.label}</span>
+                  <span className="text-[13px] leading-5 text-mist">{t(`about.stats.${s.key}`)}</span>
                 </motion.li>
               ))}
             </ul>
 
             <motion.div {...rise(0.1)} className="mt-10 md:mt-14">
-              <p className="mb-4 text-[13px] text-mist">Tools I work with</p>
+              <p className="mb-4 text-[13px] text-mist">{t('about.tools')}</p>
               <ul className="flex flex-wrap gap-2">
                 {tools.map((t) => (
                   <li

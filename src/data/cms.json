@@ -12,6 +12,13 @@
       "role": "",
       "video": "/videos/oceanspace.mp4",
       "poster": "/videos/oceanspace.webp",
+      "title_id": "Website Company Profile Ocean Space",
+      "description_id": "Website resmi Ocean Space, grup usaha Indonesia di bidang distribusi ponsel, retail, dan lifestyle. Partner bisa mengenal keempat unit bisnisnya, pencari kerja bisa melihat lowongan, dan siapa pun bisa menghubungi tim.",
+      "tags_id": [
+        "Website perusahaan",
+        "Karier",
+        "Indonesia & Inggris"
+      ],
       "published": true
     },
     {
@@ -26,6 +33,13 @@
       "role": "",
       "video": "/videos/lms-legal.mp4",
       "poster": "/videos/lms-legal.webp",
+      "title_id": "LMS Legal",
+      "description_id": "Web app yang menyimpan kontrak, izin, dan akta perusahaan di satu tempat, menunjukkan mana yang masih aktif, hampir habis, atau sudah kedaluwarsa, lalu mengirim pengingat WhatsApp ke penanggung jawabnya sebelum masa berlakunya habis.",
+      "tags_id": [
+        "Arsip dokumen",
+        "Pengingat",
+        "Tim legal"
+      ],
       "published": true
     },
     {
@@ -40,6 +54,13 @@
       "role": "",
       "video": "/videos/ontime.mp4",
       "poster": "/videos/ontime.webp",
+      "title_id": "Ontime: Absensi Selfie",
+      "description_id": "Aplikasi absensi untuk perusahaan. Karyawan, anak magang, dan freelancer cukup absen tiap pagi dengan selfie, kantor bisa melihat siapa yang sudah masuk, tepat waktu, atau terlambat, dan laporan bulanan bisa diunduh ke Excel dalam sekali klik.",
+      "tags_id": [
+        "Absensi",
+        "Absen selfie",
+        "Laporan bulanan"
+      ],
       "published": true
     },
     {
@@ -54,6 +75,13 @@
       "role": "",
       "video": "/videos/nouvo-ai.mp4",
       "poster": "/videos/nouvo-ai.webp",
+      "title_id": "Nouvo AI",
+      "description_id": "Workspace pribadi yang tenang, tempat asisten AI bernama Simon mengerjakan setiap tugas di proyekmu, dan setiap tugas punya tab serta percakapannya sendiri.",
+      "tags_id": [
+        "Asisten AI",
+        "Workspace tugas",
+        "Proyek pribadi"
+      ],
       "published": true
     },
     {
@@ -68,6 +96,13 @@
       "role": "",
       "video": "/videos/chisel.mp4",
       "poster": "/videos/chisel.webp",
+      "title_id": "Chisel",
+      "description_id": "Chisel membantu kreator Roblox menuliskan ide game mereka dengan bahasa sehari-hari, lalu langsung membuat perubahannya di Roblox Studio, langkah demi langkah.",
+      "tags_id": [
+        "Bikin game Roblox",
+        "Bahasa sehari-hari",
+        "Tools kreator"
+      ],
       "published": true
     },
     {
@@ -82,6 +117,13 @@
       "role": "Contributor",
       "video": "/videos/oceanmall.mp4",
       "poster": "/videos/oceanmall.webp",
+      "title_id": "Toko Online OceanMall",
+      "description_id": "Toko online gadget dan lifestyle tempat pembeli di Indonesia menjelajah produk, memasukkan ke keranjang, checkout, dan melacak pesanan, baik di web maupun di HP. Saya ikut berkontribusi di proyek ini sebagai bagian dari tim.",
+      "tags_id": [
+        "Belanja online",
+        "Website toko",
+        "Belanja di HP"
+      ],
       "published": true
     }
   ],

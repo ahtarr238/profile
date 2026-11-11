@@ -9,30 +9,19 @@ export const profile = {
   photo: '/images/ahtar.webp',
 }
 
-export const hero = {
-  tags: ['Solution engineering', 'Web apps', 'UI/UX'],
-  lead: 'Solution engineer from Bogor. I build web apps end to end with React, Tailwind CSS and Laravel.',
-}
-
 // The tilted band of words
 export const band = ['solution engineer', 'web apps', 'react', 'laravel', 'tailwind css', 'flutter']
 
+// Words for this section are in src/i18n/dict.js (about.*); these are the numbers.
 export const about = {
-  who: 'Ahtar Maulana Gurning',
-  whoLine: 'Informatics student at SMK Wikrama, Bogor',
-  paragraphs: [
-    'Coding started as a curiosity at school. It turned into the work I want to do: building web apps that are useful and good to use.',
-    'I take a problem from the first question to the shipped page. I work out how the app should behave, design the screens and write the code on both sides, with React and Tailwind CSS on the front and Laravel behind it.',
-    'One of those apps is live today: the company website for Berkah Global Andalan.',
-  ],
-  note: 'solution engineer',
   // Counted from this page and the old portfolio (Ocean Space and Berkah Global Andalan are the company sites)
   stats: [
     // `count` stats show how many items are published (About.jsx); `value` is a placeholder
-    { value: '6', label: 'projects featured', count: 'projects' },
-    { value: '7', label: 'certificates earned', count: 'certificates' },
-    { value: '6', label: 'tools in my stack' },
-    { value: '2', label: 'company websites' },
+    // `key` picks the label from src/i18n/dict.js (about.stats.*)
+    { value: '6', key: 'projects', label: 'projects featured', count: 'projects' },
+    { value: '7', key: 'certificates', label: 'certificates earned', count: 'certificates' },
+    { value: '6', key: 'tools', label: 'tools in my stack' },
+    { value: '2', key: 'companies', label: 'company websites' },
   ],
 }
 
@@ -61,6 +50,7 @@ export const certificates = cms.certificates
     title: c.title,
     issuer: c.issuer,
     date: dateFmt.format(new Date(`${c.issued_on}T00:00:00Z`)),
+    issuedOn: c.issued_on, // the page formats this in the visitor's language
     image: sitePath(c.image),
     alt: c.alt || c.title,
     verify: httpsOnly(c.verify),
@@ -74,13 +64,17 @@ export const projects = cms.projects
     title: p.title,
     description: p.description,
     tags: p.tags || [],
+    // optional Bahasa Indonesia versions, used when the visitor picks ID (empty = English shows)
+    titleId: p.title_id || undefined,
+    descriptionId: p.description_id || undefined,
+    tagsId: p.tags_id?.length ? p.tags_id : undefined,
     role: p.role || undefined,
     video: sitePath(p.video),
     poster: sitePath(p.poster),
   }))
 
 export const contact = {
-  note: 'Four quick questions, most of them one tap. Your answers land straight in my WhatsApp or inbox, and I reply personally.',
+  // the note and labels are in src/i18n/dict.js (contact.*)
   email: 'ahtarmaulana23@gmail.com',
   phone: '+62 8786 4322 667',
   phoneHref: 'tel:+6287864322667',
@@ -92,9 +86,5 @@ export const socials = [
   { label: 'LinkedIn', href: 'https://www.linkedin.com/in/ahtar-maulana-9b0506328' },
 ]
 
-export const nav = [
-  { id: 'about', label: 'About' },
-  { id: 'projects', label: 'Projects' },
-  { id: 'certificates', label: 'Certificates' },
-  { id: 'contact', label: 'Contact' },
-]
+// section ids, in page order; their names are in src/i18n/dict.js (nav.*)
+export const nav = [{ id: 'about' }, { id: 'projects' }, { id: 'certificates' }, { id: 'contact' }]

@@ -5,11 +5,13 @@ import { contact, socials } from '../data/content'
 import { GithubIcon, LinkedinIcon } from './BrandIcons'
 import RevealText from './RevealText'
 import LeadForm from './LeadForm'
+import { useLang } from '../i18n/context'
 
 const ease = [0.22, 1, 0.36, 1]
 const socialIcon = { GitHub: GithubIcon, LinkedIn: LinkedinIcon }
 
 function CopyEmail() {
+  const { t } = useLang()
   const [copied, setCopied] = useState(false)
   const timer = useRef(null)
 
@@ -30,7 +32,7 @@ function CopyEmail() {
       type="button"
       onClick={copy}
       className="group flex max-w-full items-center gap-4 text-left"
-      aria-label={`Copy email address ${contact.email}`}
+      aria-label={t('contact.copyEmail', { email: contact.email })}
     >
       <span className="relative block h-10 overflow-hidden md:h-12">
         <AnimatePresence mode="popLayout" initial={false}>
@@ -44,7 +46,7 @@ function CopyEmail() {
               copied ? 'text-coral' : 'text-sky-soft'
             }`}
           >
-            {copied ? 'Copied to clipboard' : contact.email}
+            {copied ? t('contact.copied') : contact.email}
           </motion.span>
         </AnimatePresence>
       </span>
@@ -55,30 +57,31 @@ function CopyEmail() {
         {copied ? <Check size={16} strokeWidth={1.75} /> : <Copy size={16} strokeWidth={1.75} />}
       </span>
       <span className="sr-only" aria-live="polite">
-        {copied ? 'Email copied' : ''}
+        {copied ? t('contact.copiedSr') : ''}
       </span>
     </button>
   )
 }
 
 export default function Contact() {
+  const { t } = useLang()
   return (
     // clip, not hidden: a hidden box can still be scrolled sideways when something inside takes focus
     <section id="contact" className="relative overflow-clip">
       <div aria-hidden="true" className="glow -right-56 top-[10%] h-[680px] w-[460px] opacity-70" />
 
       <div className="relative mx-auto max-w-[1320px] px-6 pb-28 md:px-10 md:pb-36">
-        <RevealText text="Contact" accent="." className="font-display text-[clamp(72px,15vw,230px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft" />
+        <RevealText text={t('contact.title')} accent="." className="font-display text-[clamp(72px,15vw,230px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft" />
 
         <div className="mt-14 grid gap-14 md:mt-20 lg:grid-cols-[1fr_520px] lg:gap-20">
           <div className="flex flex-col">
-            <p className="max-w-[26rem] text-[18px] leading-[1.55] text-sky-soft">{contact.note}</p>
+            <p className="max-w-[26rem] text-[18px] leading-[1.55] text-sky-soft">{t('contact.note')}</p>
             <div className="mt-10">
               <CopyEmail />
             </div>
             <dl className="mt-12 grid gap-6 text-[15px] sm:grid-cols-2">
               <div>
-                <dt className="text-[13px] text-mist">Phone</dt>
+                <dt className="text-[13px] text-mist">{t('contact.phone')}</dt>
                 <dd className="mt-1">
                   <a href={contact.phoneHref} className="text-sky-soft hover:text-coral">
                     {contact.phone}
@@ -86,8 +89,8 @@ export default function Contact() {
                 </dd>
               </div>
               <div>
-                <dt className="text-[13px] text-mist">Based in</dt>
-                <dd className="mt-1 text-sky-soft">{contact.location}</dd>
+                <dt className="text-[13px] text-mist">{t('contact.based')}</dt>
+                <dd className="mt-1 text-sky-soft">{t('profile.location')}</dd>
               </div>
             </dl>
             <ul className="mt-10 flex flex-wrap gap-3">

@@ -7,11 +7,13 @@ import { useLenisInstance } from '../hooks/useLenis'
 import Tag from './Tag'
 import RevealText from './RevealText'
 import { trackEvent } from '../lib/track'
+import { useLang } from '../i18n/context'
 
 const ease = [0.22, 1, 0.36, 1]
 const AUTO_MS = 5000 // the featured certificate moves on by itself until someone picks one
 
 function Lightbox({ cert, onClose }) {
+  const { t, date } = useLang()
   const closeRef = useRef(null)
   const lenis = useLenisInstance()
 
@@ -57,7 +59,7 @@ function Lightbox({ cert, onClose }) {
               <div>
                 <p className="font-display text-xl font-medium text-sky-soft">{cert.title}</p>
                 <p className="mt-1 text-sm text-mist tabular-nums">
-                  {cert.issuer} · {cert.date}
+                  {cert.issuer} · {date(cert.issuedOn)}
                 </p>
                 {cert.verify && (
                   <a
@@ -66,7 +68,7 @@ function Lightbox({ cert, onClose }) {
                     rel="noreferrer"
                     className="mt-2 inline-flex items-center gap-1 text-sm text-coral underline-offset-4 hover:underline"
                   >
-                    Verify on {cert.issuer.split(' ')[0]}
+                    {t('certs.verifyOn', { issuer: cert.issuer.split(' ')[0] })}
                     <ArrowUpRight size={15} strokeWidth={1.75} aria-hidden="true" />
                   </a>
                 )}
@@ -78,7 +80,7 @@ function Lightbox({ cert, onClose }) {
                 className="inline-flex h-11 shrink-0 items-center gap-2 rounded-[4px] border border-sky-soft/60 px-4 text-sm text-sky-soft transition-colors duration-150 ease-out hover:bg-sky-soft hover:text-ground"
               >
                 <X size={18} strokeWidth={1.5} />
-                Close
+                {t('certs.close')}
               </button>
             </figcaption>
           </figure>
@@ -91,12 +93,13 @@ function Lightbox({ cert, onClose }) {
 
 /** The large frame: the active certificate, crossfading when it changes. */
 function Featured({ cert, onOpen, hidden }) {
+  const { t } = useLang()
   return (
     <div className="group relative overflow-hidden rounded-[10px] bg-white p-2 md:p-3">
       <button
         type="button"
         onClick={() => onOpen(cert)}
-        aria-label={`Open certificate: ${cert.title}`}
+        aria-label={t('certs.openNamed', { title: cert.title })}
         className="relative block aspect-[16/11] w-full overflow-hidden rounded-[6px] bg-white"
       >
         <AnimatePresence initial={false} mode="popLayout">
@@ -123,6 +126,7 @@ function Featured({ cert, onOpen, hidden }) {
 }
 
 export default function Certificates() {
+  const { t, date } = useLang()
   const count = certificates.length
   const [active, setActive] = useState(0)
   const [touched, setTouched] = useState(false)
@@ -152,7 +156,7 @@ export default function Certificates() {
 
       <div className="relative mx-auto max-w-[1320px] px-6 pb-24 md:px-10 md:pb-40">
         <RevealText
-          text="Certificates"
+          text={t('certs.title')}
           accent="."
           className="font-display text-[clamp(48px,12.5vw,190px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft"
         />
@@ -216,7 +220,7 @@ export default function Certificates() {
                       </span>
                       <span className="mt-1 block text-[13px] text-mist">
                         {c.issuer}
-                        <span className="text-dim tabular-nums"> · {c.date}</span>
+                        <span className="text-dim tabular-nums"> · {date(c.issuedOn)}</span>
                       </span>
                     </span>
                   </button>
@@ -229,7 +233,7 @@ export default function Certificates() {
                 onClick={() => setOpen(cert)}
                 className="group inline-flex h-12 items-center gap-3 rounded-[4px] bg-coral px-5 text-[15px] font-medium text-ground transition-[background-color,transform] duration-150 ease-out hover:bg-[#f27c5d] active:scale-[0.97]"
               >
-                Open certificate
+                {t('certs.open')}
                 <ArrowUpRight
                   size={18}
                   strokeWidth={1.75}
@@ -244,7 +248,7 @@ export default function Certificates() {
                   rel="noreferrer"
                   className="inline-flex h-12 items-center gap-1.5 text-[15px] text-sky-soft underline decoration-sky-soft/30 underline-offset-4 transition-colors duration-150 ease-out hover:decoration-coral"
                 >
-                  Verify credential
+                  {t('certs.verify')}
                 </a>
               )}
             </li>

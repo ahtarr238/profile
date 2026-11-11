@@ -1,5 +1,6 @@
 import { motion } from 'motion/react'
-import { hero, profile } from '../data/content'
+import { profile } from '../data/content'
+import { useLang } from '../i18n/context'
 import { scrollToId, useLenisInstance } from '../hooks/useLenis'
 import { ParallaxComponent } from './ui/parallax-scrolling'
 import Button from './Button'
@@ -17,6 +18,7 @@ const LAYERS = {
 
 export default function Hero() {
   const lenis = useLenisInstance()
+  const { t } = useLang()
 
   const go = (id) => (e) => {
     e.preventDefault()
@@ -38,7 +40,7 @@ export default function Hero() {
         title={
           <h1 className="-mt-[6vh] px-4 text-center">
             <span className="sr-only">
-              {profile.name}, {profile.role} in {profile.location}
+              {t('hero.srTitle', { name: profile.name, role: t('profile.role'), location: t('profile.location') })}
             </span>
             <RevealText
               as="span"
@@ -57,20 +59,21 @@ export default function Hero() {
         <div className="mx-auto w-full max-w-[1320px] px-6 pb-24 md:px-10 md:pb-28">
           <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
             <motion.div {...rise(0.5)} className="max-w-[30rem]">
-              <p className="text-[18px] leading-[1.5] text-sky-soft md:text-[20px]">{hero.lead}</p>
+              <p className="text-[18px] leading-[1.5] text-sky-soft md:text-[20px]">{t('hero.lead')}</p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Button href="#contact" onClick={go('contact')}>
-                  Get in touch
+                {/* a touch less padding on phones keeps both buttons on one line in either language */}
+                <Button href="#contact" onClick={go('contact')} className="max-sm:px-4">
+                  {t('nav.getInTouch')}
                 </Button>
-                <Button href="#about" onClick={go('about')} outline>
-                  About me
+                <Button href="#about" onClick={go('about')} outline className="max-sm:px-4">
+                  {t('hero.aboutMe')}
                 </Button>
               </div>
             </motion.div>
             <motion.ul {...rise(0.6, 16)} className="flex flex-wrap gap-2 md:justify-end">
-              {hero.tags.map((t) => (
-                <li key={t}>
-                  <Tag className="bg-ground/40">{t}</Tag>
+              {t('hero.tags').map((tag) => (
+                <li key={tag}>
+                  <Tag className="bg-ground/40">{tag}</Tag>
                 </li>
               ))}
             </motion.ul>
