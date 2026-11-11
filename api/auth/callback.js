@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     })
     const data = await r.json()
     token = data.access_token || ''
-    if (!token) return backWithError(res, 'exchange')
+    if (!token) return backWithError(res, 'exchange', data.error)
 
     const user = await githubUser(token)
     if (!user || String(user.id) !== c.adminId) {

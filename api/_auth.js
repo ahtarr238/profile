@@ -65,8 +65,14 @@ export function redirect(res, location) {
   res.end()
 }
 
-/** Errors go back in the #fragment: only a short code, never a token. */
-export const backWithError = (res, code) => redirect(res, `/admin#error=${encodeURIComponent(code)}`)
+/**
+ * Errors go back in the #fragment: only short codes, never a token. `detail` is GitHub's own
+ * error code (e.g. redirect_uri_mismatch), kept only if it looks like one.
+ */
+export function backWithError(res, code, detail) {
+  const d = /^[a-z_]{1,40}$/.test(String(detail || '')) ? `&detail=${detail}` : ''
+  redirect(res, `/admin#error=${encodeURIComponent(code)}${d}`)
+}
 
 const ghHeaders = (auth) => ({
   Authorization: auth,

@@ -78,9 +78,11 @@ const HANDOFF = '__Host-admin_handoff'
 function takeSignIn() {
   const out = {}
   if (window.location.hash) {
-    const code = new URLSearchParams(window.location.hash.slice(1)).get('error')
+    const params = new URLSearchParams(window.location.hash.slice(1))
+    const code = params.get('error')
+    const detail = params.get('detail')
     window.history.replaceState(null, '', window.location.pathname)
-    if (code) out.error = signInError(code)
+    if (code) out.error = signInError(code, /^[a-z_]{1,40}$/.test(detail || '') ? detail : '')
   }
   const m = document.cookie.match(/(?:^|;\s*)__Host-admin_handoff=([^;]+)/)
   if (!m) return out
