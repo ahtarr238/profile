@@ -20,4 +20,7 @@ export const k = {
   devices: (d) => `stats:device:${d}`,
   events: (d) => `stats:event:${d}`,
   total: 'stats:views:total',
+  likes: (d) => `stats:likes:${d}`,
+  likesTotal: 'stats:likes:total',
+  likeSeen: (d, visitor) => `likes:seen:${d}:${visitor}`, // one like per visitor per day
 }

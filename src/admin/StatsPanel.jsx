@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { ThumbsUp } from 'lucide-react'
 import { friendly } from './errors'
 import { Notice } from './ui'
 
@@ -20,10 +21,13 @@ const countryName = (cc) => {
   }
 }
 
-function Tile({ label, value, note }) {
+function Tile({ label, value, note, icon: Icon, className = '' }) {
   return (
-    <div className="flex flex-col justify-between rounded-[6px] bg-tile p-4 md:p-5">
-      <span className="text-[13px] text-mist">{label}</span>
+    <div className={`flex flex-col justify-between rounded-[6px] bg-tile p-4 md:p-5 ${className}`}>
+      <span className="flex items-center gap-1.5 text-[13px] text-mist">
+        {Icon && <Icon size={14} strokeWidth={1.9} className="text-coral" fill="currentColor" aria-hidden="true" />}
+        {label}
+      </span>
       <span className="font-display mt-3 text-[34px] leading-none font-light tabular-nums md:text-[42px]">{nf.format(value)}</span>
       {note && <span className="mt-2 text-[12px] text-dim">{note}</span>}
     </div>
@@ -53,7 +57,9 @@ function DailyBars({ series }) {
       <figcaption className="flex items-baseline justify-between gap-4">
         <span className="text-[14px] text-sky-soft">Visitors per day</span>
         <span className="text-[12px] text-dim tabular-nums">
-          {d ? `${shortDate(d.date)}: ${nf.format(d.visitors)} visitors · ${nf.format(d.views)} views` : 'Hover a day for details'}
+          {d
+            ? `${shortDate(d.date)}: ${nf.format(d.visitors)} visitors · ${nf.format(d.views)} views · ${nf.format(d.likes ?? 0)} likes`
+            : 'Hover a day for details'}
         </span>
       </figcaption>
       <div className="relative mt-4 flex gap-3">
@@ -194,7 +200,14 @@ export default function StatsPanel({ token }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <Tile
+          label="Likes"
+          icon={ThumbsUp}
+          value={data.likes ?? 0}
+          note={`last ${data.days} days · ${nf.format(data.likesAllTime ?? 0)} all time`}
+          className="col-span-2 md:col-span-1"
+        />
         <Tile label="Visitors" value={data.visitors} note={`last ${data.days} days`} />
         <Tile label="Page views" value={data.views} note={`last ${data.days} days`} />
         <Tile label="Reached out" value={contacts} note="WhatsApp or email sends" />

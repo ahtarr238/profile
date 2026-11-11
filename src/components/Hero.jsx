@@ -42,6 +42,7 @@ export default function Hero() {
             </span>
             <RevealText
               as="span"
+              decorative
               onLoad
               text={profile.short}
               accent="."
@@ -52,7 +53,8 @@ export default function Hero() {
           </h1>
         }
       >
-        <div className="mx-auto w-full max-w-[1320px] px-6 pb-12 md:px-10 md:pb-14">
+        {/* extra room at the bottom so the floating like button (bottom-right) doesn't sit on the tags */}
+        <div className="mx-auto w-full max-w-[1320px] px-6 pb-24 md:px-10 md:pb-28">
           <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
             <motion.div {...rise(0.5)} className="max-w-[30rem]">
               <p className="text-[18px] leading-[1.5] text-sky-soft md:text-[20px]">{hero.lead}</p>

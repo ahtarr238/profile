@@ -2,33 +2,9 @@
 // Privacy: no cookies, nothing stored about the person. A visitor is counted once a day through
 // a one-way hash of (secret + day + IP + browser) that changes every day and can't be reversed.
 // Abuse: only same-site requests, bots ignored, at most 20 hits a minute per visitor.
-import crypto from 'node:crypto'
-import { pipeline, redisReady, redisSecret } from './_redis.js'
+import { pipeline, redisReady } from './_redis.js'
+import { body, realVisitor, visitorId } from './_visitor.js'
 import { EVENTS, KEEP_SECONDS, dayKey, k } from './_stats.js'
-
-const BOT = /bot|crawl|spider|slurp|preview|headless|lighthouse|pagespeed|curl|wget|python|axios|node-fetch|go-http|java\/|httpclient|monitor/i
-
-function sameSite(req) {
-  const host = req.headers['x-forwarded-host'] || req.headers.host
-  const origin = req.headers.origin
-  if (origin) {
-    try {
-      return new URL(origin).host === host
-    } catch {
-      return false
-    }
-  }
-  return req.headers['sec-fetch-site'] === 'same-origin'
-}
-
-function body(req) {
-  if (req.body && typeof req.body === 'object') return req.body
-  try {
-    return JSON.parse(String(req.body || '').slice(0, 512))
-  } catch {
-    return {}
-  }
-}
 
 const device = (ua) => (/ipad|tablet/i.test(ua) ? 'tablet' : /mobi|android|iphone/i.test(ua) ? 'mobile' : 'desktop')
 
@@ -54,18 +30,15 @@ export default async function handler(req, res) {
   }
   const ua = String(req.headers['user-agent'] || '')
   // anything we won't count still gets a quiet 204, so there's nothing to learn by probing
-  if (!redisReady || !sameSite(req) || !ua || BOT.test(ua)) return done()
+  if (!redisReady || !realVisitor(req)) return done()
 
   const data = body(req)
   const isView = data.t === 'pageview'
   const event = !isView && EVENTS.includes(data.e) ? data.e : null
   if (!isView && !event) return done()
 
-  const ip = String(req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || '')
-    .split(',')[0]
-    .trim()
   const day = dayKey()
-  const visitor = crypto.createHmac('sha256', redisSecret).update(`${day}|${ip}|${ua}`).digest('base64url').slice(0, 22)
+  const visitor = visitorId(req, day)
 
   try {
     const minute = Math.floor(Date.now() / 60000)

@@ -37,6 +37,7 @@ export default async function handler(req, res) {
 
   const n = [7, 30, 90].includes(Number(new URL(req.url, 'http://x').searchParams.get('days'))) ? Number(new URL(req.url, 'http://x').searchParams.get('days')) : 30
   const days = lastDays(n)
+  const PER_DAY = 7 // commands per day below
   try {
     const perDay = days.flatMap((d) => [
       ['GET', k.views(d)],
@@ -45,21 +46,22 @@ export default async function handler(req, res) {
       ['HGETALL', k.countries(d)],
       ['HGETALL', k.devices(d)],
       ['HGETALL', k.events(d)],
+      ['GET', k.likes(d)],
     ])
-    const out = await pipeline([...perDay, ['PFCOUNT', ...days.map(k.visitors)], ['GET', k.total]])
+    const out = await pipeline([...perDay, ['PFCOUNT', ...days.map(k.visitors)], ['GET', k.total], ['GET', k.likesTotal]])
     const refs = {}
     const countries = {}
     const devices = {}
     const events = Object.fromEntries(EVENTS.map((e) => [e, 0]))
     const series = days.map((date, i) => {
-      const [views, visitors, r, co, de, ev] = out.slice(i * 6, i * 6 + 6)
+      const [views, visitors, r, co, de, ev, lk] = out.slice(i * PER_DAY, i * PER_DAY + PER_DAY)
       add(refs, pairs(r))
       add(countries, pairs(co))
       add(devices, pairs(de))
       add(events, pairs(ev))
-      return { date, views: Number(views) || 0, visitors: Number(visitors) || 0 }
+      return { date, views: Number(views) || 0, visitors: Number(visitors) || 0, likes: Number(lk) || 0 }
     })
-    const [uniqueVisitors, allTime] = out.slice(days.length * 6)
+    const [uniqueVisitors, allTime, likesAllTime] = out.slice(days.length * PER_DAY)
     return send(200, {
       configured: true,
       days: n,
@@ -67,6 +69,8 @@ export default async function handler(req, res) {
       views: series.reduce((s, d) => s + d.views, 0),
       visitors: Number(uniqueVisitors) || 0,
       allTime: Number(allTime) || 0,
+      likes: series.reduce((s, d) => s + d.likes, 0),
+      likesAllTime: Number(likesAllTime) || 0,
       referrers: top(refs),
       countries: top(countries),
       devices,

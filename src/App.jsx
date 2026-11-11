@@ -10,6 +10,7 @@ import Projects from './components/Projects'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
 import Cursor from './components/Cursor'
+import LikeButton from './components/LikeButton'
 import { LenisContext, useLenis } from './hooks/useLenis'
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
           <Contact />
         </main>
         <Footer />
+        <LikeButton />
       </MotionConfig>
     </LenisContext.Provider>
   )
