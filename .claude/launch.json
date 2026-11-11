@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--", "--port", "5173", "--strictPort"],
       "port": 5173
+    },
+    {
+      "name": "dist-headers",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/serve-dist.mjs"],
+      "port": 4321
     }
   ]
 }

@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { ArrowLeft, ArrowRight, Check, Copy, Mail, RotateCcw } from 'lucide-react'
 import { contact } from '../data/content'
 import { WhatsappIcon } from './BrandIcons'
+import { trackEvent } from '../lib/track'
 
 const ease = [0.22, 1, 0.36, 1]
 
@@ -257,6 +258,7 @@ export default function LeadForm() {
                 <div className="mt-6 flex flex-wrap gap-3">
                   <a
                     href={waHref}
+                    onClick={() => trackEvent('contact_whatsapp')}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex h-12 items-center gap-2.5 rounded-[4px] bg-coral px-5 text-[15px] font-medium text-ground transition-[background-color,transform] duration-150 ease-out hover:bg-[#f27c5d] active:scale-[0.97]"
@@ -266,6 +268,7 @@ export default function LeadForm() {
                   </a>
                   <a
                     href={mailHref}
+                    onClick={() => trackEvent('contact_email')}
                     className="inline-flex h-12 items-center gap-2.5 rounded-[4px] border border-sky-soft/60 px-5 text-[15px] text-sky-soft transition-colors duration-150 ease-out hover:bg-sky-soft hover:text-ground"
                   >
                     <Mail size={17} strokeWidth={1.75} aria-hidden="true" />

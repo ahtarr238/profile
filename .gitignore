@@ -26,3 +26,7 @@ dist-ssr
 .taste-skill
 shots
 tools/hero-layers/preview.jpg
+
+# Secrets live in Vercel env vars, or a local .env that is never committed
+.env
+.env.*

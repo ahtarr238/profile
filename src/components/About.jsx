@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import { about, profile, tools } from '../data/content'
+import { about, certificates, profile, projects, tools } from '../data/content'
 import RevealText from './RevealText'
 import CountUp from './CountUp'
 
@@ -20,6 +20,9 @@ const rise = (delay = 0) => ({
 
 export default function About() {
   const [lead, ...rest] = about.paragraphs
+  // the two counts follow whatever is published, so they never go stale after an edit in /admin
+  const counts = { projects: projects.length, certificates: certificates.length }
+  const stats = about.stats.map((s) => (s.count ? { ...s, value: String(counts[s.count]) } : s))
 
   return (
     <section id="about" className="relative overflow-hidden">
@@ -70,7 +73,7 @@ export default function About() {
             </motion.div>
 
             <ul className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 md:mt-14">
-              {about.stats.map((s, i) => (
+              {stats.map((s, i) => (
                 <motion.li
                   key={s.label}
                   {...rise(0.06 * i)}

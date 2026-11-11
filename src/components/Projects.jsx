@@ -5,6 +5,7 @@ import { projects } from '../data/content'
 import Tag from './Tag'
 import RevealText from './RevealText'
 import SwipeDots from './SwipeDots'
+import { trackEvent } from '../lib/track'
 
 const ease = [0.22, 1, 0.36, 1]
 
@@ -41,6 +42,7 @@ function ProjectVideo({ project }) {
   const expand = async () => {
     const video = ref.current
     if (!video) return
+    trackEvent('video_open')
     video.muted = false
     setMuted(false)
     video.play().catch(() => {})

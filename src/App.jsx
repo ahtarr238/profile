@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { MotionConfig } from 'motion/react'
+import { trackPageview } from './lib/track'
 import Nav from './components/Nav'
 import Hero from './components/Hero'
 import Band from './components/Band'
@@ -12,6 +14,7 @@ import { LenisContext, useLenis } from './hooks/useLenis'
 
 export default function App() {
   const lenis = useLenis()
+  useEffect(trackPageview, [])
   return (
     <LenisContext.Provider value={lenis}>
       <MotionConfig reducedMotion="never">

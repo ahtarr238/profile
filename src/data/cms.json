@@ -1,0 +1,160 @@
+{
+  "projects": [
+    {
+      "id": "oceanspace",
+      "title": "Ocean Space Company Website",
+      "description": "The company website for Ocean Space, an Indonesian group in phone distribution, retail and lifestyle. Partners can explore its four businesses, job seekers can find open roles, and anyone can contact the team.",
+      "tags": [
+        "Company website",
+        "Careers",
+        "English and Indonesian"
+      ],
+      "role": "",
+      "video": "/videos/oceanspace.mp4",
+      "poster": "/videos/oceanspace.jpg",
+      "published": true
+    },
+    {
+      "id": "lms-legal",
+      "title": "LMS Legal",
+      "description": "A web app that keeps a company’s contracts, permits and deeds in one place, shows at a glance what is active, expiring soon or already expired, and sends the person in charge a WhatsApp reminder before anything runs out.",
+      "tags": [
+        "Document archive",
+        "Reminders",
+        "Legal teams"
+      ],
+      "role": "",
+      "video": "/videos/lms-legal.mp4",
+      "poster": "/videos/lms-legal.jpg",
+      "published": true
+    },
+    {
+      "id": "ontime",
+      "title": "Ontime: Selfie Attendance",
+      "description": "An attendance app for companies. Staff, interns and freelancers check in each morning with a quick selfie, the office sees who is in, on time or late, and the monthly report downloads to Excel in one click.",
+      "tags": [
+        "Attendance",
+        "Selfie check-in",
+        "Monthly reports"
+      ],
+      "role": "",
+      "video": "/videos/ontime.mp4",
+      "poster": "/videos/ontime.jpg",
+      "published": true
+    },
+    {
+      "id": "nouvo-ai",
+      "title": "Nouvo AI",
+      "description": "A calm personal workspace where an AI helper named Simon takes on each task in your projects, and every task keeps its own tab and conversation.",
+      "tags": [
+        "AI helper",
+        "Task workspace",
+        "Personal project"
+      ],
+      "role": "",
+      "video": "/videos/nouvo-ai.mp4",
+      "poster": "/videos/nouvo-ai.jpg",
+      "published": true
+    },
+    {
+      "id": "chisel",
+      "title": "Chisel",
+      "description": "Chisel lets Roblox creators describe their game idea in plain words, then makes the changes for them right inside Roblox Studio, step by step.",
+      "tags": [
+        "Roblox game creation",
+        "Plain-language building",
+        "Creator tool"
+      ],
+      "role": "",
+      "video": "/videos/chisel.mp4",
+      "poster": "/videos/chisel.jpg",
+      "published": true
+    },
+    {
+      "id": "oceanmall",
+      "title": "OceanMall Online Store",
+      "description": "An online gadget and lifestyle store where shoppers in Indonesia browse products, add them to a cart, check out and follow their orders, on the web or on their phone. I contributed to this project as part of the team.",
+      "tags": [
+        "Online shopping",
+        "Store website",
+        "Phone shopping"
+      ],
+      "role": "Contributor",
+      "video": "/videos/oceanmall.mp4",
+      "poster": "/videos/oceanmall.jpg",
+      "published": true
+    }
+  ],
+  "certificates": [
+    {
+      "id": "myskill-claude-agent",
+      "title": "AI Agent with Claude AI Specialization",
+      "issuer": "MySkill / Education Alliance Finland · 5 courses",
+      "issued_on": "2026-11-11",
+      "image": "/images/cert-myskill-claude-agent.webp",
+      "alt": "MySkill Certificate of Skill Specialization in AI Agent with Claude AI, 5 courses completed",
+      "verify": "",
+      "published": true
+    },
+    {
+      "id": "myskill-react-spec",
+      "title": "Frontend React Specialization",
+      "issuer": "MySkill / Education Alliance Finland · 19 courses",
+      "issued_on": "2026-11-11",
+      "image": "/images/cert-myskill-react-spec.webp",
+      "alt": "MySkill Certificate of Skill Specialization in Frontend React, 19 courses completed",
+      "verify": "",
+      "published": true
+    },
+    {
+      "id": "dicoding-financial",
+      "title": "Introduction to Financial Literacy",
+      "issuer": "Dicoding Indonesia · Coding Camp by DBS Foundation",
+      "issued_on": "2026-01-02",
+      "image": "/images/cert-dicoding-financial.webp",
+      "alt": "Dicoding certificate for Introduction to Financial Literacy",
+      "verify": "https://www.dicoding.com/certificates/2VX3VK2LQPYQ",
+      "published": true
+    },
+    {
+      "id": "myskill-react",
+      "title": "Introduction to React",
+      "issuer": "MySkill / Education Alliance Finland",
+      "issued_on": "2025-10-15",
+      "image": "/images/cert-myskill-react.webp",
+      "alt": "MySkill certificate for Introduction to React",
+      "verify": "",
+      "published": true
+    },
+    {
+      "id": "myskill-flutter",
+      "title": "Introduction to Dart and Flutter",
+      "issuer": "MySkill / Education Alliance Finland",
+      "issued_on": "2025-09-30",
+      "image": "/images/cert-myskill-flutter.webp",
+      "alt": "MySkill certificate for Introduction to Dart and Flutter",
+      "verify": "",
+      "published": true
+    },
+    {
+      "id": "dicoding-ai",
+      "title": "Belajar Dasar AI",
+      "issuer": "Dicoding Indonesia",
+      "issued_on": "2025-09-30",
+      "image": "/images/cert-dicoding-ai.webp",
+      "alt": "Dicoding certificate for Belajar Dasar AI",
+      "verify": "https://www.dicoding.com/certificates/1OP872LV8ZQK",
+      "published": true
+    },
+    {
+      "id": "dicoding-web",
+      "title": "Belajar Dasar Pemrograman Web",
+      "issuer": "Dicoding Indonesia",
+      "issued_on": "2024-10-07",
+      "image": "/images/cert-dicoding-web.webp",
+      "alt": "Dicoding certificate for Belajar Dasar Pemrograman Web",
+      "verify": "",
+      "published": true
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import { certificates } from '../data/content'
 import { useLenisInstance } from '../hooks/useLenis'
 import Tag from './Tag'
 import RevealText from './RevealText'
+import { trackEvent } from '../lib/track'
 
 const ease = [0.22, 1, 0.36, 1]
 const AUTO_MS = 5000 // the featured certificate moves on by itself until someone picks one
@@ -16,6 +17,7 @@ function Lightbox({ cert, onClose }) {
 
   useEffect(() => {
     if (!cert) return
+    trackEvent('cert_open')
     const previous = document.activeElement
     lenis?.stop()
     closeRef.current?.focus()
@@ -121,6 +123,7 @@ function Featured({ cert, onOpen, hidden }) {
 }
 
 export default function Certificates() {
+  const count = certificates.length
   const [active, setActive] = useState(0)
   const [touched, setTouched] = useState(false)
   const [open, setOpen] = useState(null)
@@ -130,16 +133,18 @@ export default function Certificates() {
 
   // moves on by itself while on screen, until someone picks a certificate
   useEffect(() => {
-    if (touched || !onScreen || open) return
-    const t = setInterval(() => setActive((i) => (i + 1) % certificates.length), AUTO_MS)
+    if (touched || !onScreen || open || count < 2) return
+    const t = setInterval(() => setActive((i) => (i + 1) % count), AUTO_MS)
     return () => clearInterval(t)
-  }, [touched, onScreen, open])
+  }, [touched, onScreen, open, count])
 
   const pick = (i) => {
     setTouched(true)
     setActive(i)
   }
-  const cert = certificates[active]
+  // the list can shrink once the live copy arrives, so never point past its end
+  const cert = certificates[Math.min(active, count - 1)]
+  if (!cert) return null
 
   return (
     <section id="certificates" ref={sectionRef} className="relative overflow-hidden">
