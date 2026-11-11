@@ -96,7 +96,8 @@ function ProjectVideo({ project }) {
             muted
             loop
             playsInline
-            preload="metadata"
+            // nothing downloads until the video scrolls into view (play() then fetches it); the poster shows meanwhile
+            preload="none"
             aria-label={`Intro video for ${project.title}`}
             onClick={() => {
               // phones: a tap opens it big; desktop keeps the buttons for that

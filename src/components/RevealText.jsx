@@ -7,8 +7,10 @@ const ease = [0.22, 1, 0.36, 1]
  * Big type that rises letter by letter from behind a mask when it comes on screen.
  * `text` may hold "\n" for line breaks; `accent` is a trailing piece in coral (like ".").
  * `onLoad` plays it right away instead of waiting for the scroll.
+ * Screen readers get the plain words (aria-label on headings, an sr-only copy on spans) instead of
+ * letter-by-letter spans. `decorative` hides it all, for when the parent already says it.
  */
-export default function RevealText({ text, accent = '', as: Tag = 'h2', className = '', delay = 0, stagger = 0.035, onLoad = false }) {
+export default function RevealText({ text, accent = '', as: Tag = 'h2', className = '', delay = 0, stagger = 0.035, onLoad = false, decorative = false }) {
   const ref = useRef(null)
   const seen = useInView(ref, { once: true, amount: 0.35 })
   const show = onLoad || seen
@@ -33,7 +35,15 @@ export default function RevealText({ text, accent = '', as: Tag = 'h2', classNam
   }
 
   return (
-    <Tag ref={ref} className={className} aria-label={`${text.replace(/\n/g, ' ')}${accent}`}>
+    // Headings name themselves with aria-label (allowed on h1–h6), so the page text stays the visible
+    // letters once. A plain span can't carry aria-label, so it gets an sr-only copy instead.
+    <Tag
+      ref={ref}
+      className={className}
+      aria-hidden={decorative || undefined}
+      aria-label={!decorative && Tag !== 'span' ? `${text.replace(/\n/g, ' ')}${accent}` : undefined}
+    >
+      {!decorative && Tag === 'span' && <span className="sr-only">{`${text.replace(/\n/g, ' ')}${accent}`}</span>}
       {lines.map((line, li) => (
         <span key={li} aria-hidden="true" className="-mb-[0.1em] block overflow-hidden pb-[0.1em]">
           {[...line].map((ch, ci) => letter(ch, ci, starts[li] + ci))}

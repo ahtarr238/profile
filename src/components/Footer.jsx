@@ -46,14 +46,13 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* the name again, cut by the bottom edge */}
+      {/* the name again, cut by the bottom edge. Drawn with CSS content: it's decoration, so it
+          stays out of the page text that readers and search engines see (and out of contrast checks) */}
       <p
         aria-hidden="true"
-        className="font-display mx-auto -mb-[0.32em] max-w-[1320px] px-6 pt-6 text-[clamp(112px,25vw,380px)] leading-[0.8] font-medium tracking-[-0.055em] text-tile select-none md:px-10"
-      >
-        {profile.short}
-        <span className="text-coral/40">.</span>
-      </p>
+        data-word={profile.short}
+        className="font-display mx-auto -mb-[0.32em] max-w-[1320px] px-6 pt-6 text-[clamp(112px,25vw,380px)] leading-[0.8] font-medium tracking-[-0.055em] text-tile select-none before:content-[attr(data-word)] after:text-coral/40 after:content-['.'] md:px-10"
+      />
     </footer>
   )
 }

@@ -16,8 +16,9 @@
   --color-coral: #ee6a48;
   --color-coral-deep: #c8502f;
 
-  --font-display: 'Outfit', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  /* self-hosted (@fontsource-variable, imported in main.jsx): no third-party request holds up the first paint */
+  --font-display: 'Outfit Variable', 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Instrument Sans Variable', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }

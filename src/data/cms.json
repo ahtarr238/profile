@@ -11,7 +11,7 @@
       ],
       "role": "",
       "video": "/videos/oceanspace.mp4",
-      "poster": "/videos/oceanspace.jpg",
+      "poster": "/videos/oceanspace.webp",
       "published": true
     },
     {
@@ -25,7 +25,7 @@
       ],
       "role": "",
       "video": "/videos/lms-legal.mp4",
-      "poster": "/videos/lms-legal.jpg",
+      "poster": "/videos/lms-legal.webp",
       "published": true
     },
     {
@@ -39,7 +39,7 @@
       ],
       "role": "",
       "video": "/videos/ontime.mp4",
-      "poster": "/videos/ontime.jpg",
+      "poster": "/videos/ontime.webp",
       "published": true
     },
     {
@@ -53,7 +53,7 @@
       ],
       "role": "",
       "video": "/videos/nouvo-ai.mp4",
-      "poster": "/videos/nouvo-ai.jpg",
+      "poster": "/videos/nouvo-ai.webp",
       "published": true
     },
     {
@@ -67,7 +67,7 @@
       ],
       "role": "",
       "video": "/videos/chisel.mp4",
-      "poster": "/videos/chisel.jpg",
+      "poster": "/videos/chisel.webp",
       "published": true
     },
     {
@@ -81,7 +81,7 @@
       ],
       "role": "Contributor",
       "video": "/videos/oceanmall.mp4",
-      "poster": "/videos/oceanmall.jpg",
+      "poster": "/videos/oceanmall.webp",
       "published": true
     }
   ],

@@ -1,6 +1,7 @@
 // Re-encodes the heavy site images as WebP at a sensible width, using the machine's Chrome
 // (canvas encoder over the DevTools protocol); nothing to install.
-//   node tools/optimize-images.mjs
+//   node tools/optimize-images.mjs            (every job)
+//   node tools/optimize-images.mjs videos     (only jobs whose source path contains "videos")
 import fs from 'node:fs'
 import path from 'node:path'
 import http from 'node:http'
@@ -9,14 +10,18 @@ import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const IMAGES = path.join(ROOT, 'public', 'images')
-// source file -> [output name, max width]
-const JOBS = [
-  ['CertiDicoding_DasarWeb-1.png', 'cert-dicoding-web.webp', 1600],
-  ['react-certi.png', 'cert-myskill-react.webp', 1600],
-  ['flutter-certi.png', 'cert-myskill-flutter.webp', 1600],
-  ['Ahtar-PP.jpeg', 'ahtar.webp', 640],
+const IMAGES = path.join(ROOT, 'public') // job paths are relative to public/
+// [source, output, max width, quality]
+const ALL_JOBS = [
+  ['images/CertiDicoding_DasarWeb-1.png', 'images/cert-dicoding-web.webp', 1600, 0.82],
+  ['images/react-certi.png', 'images/cert-myskill-react.webp', 1600, 0.82],
+  ['images/flutter-certi.png', 'images/cert-myskill-flutter.webp', 1600, 0.82],
+  ['images/Ahtar-PP.jpeg', 'images/ahtar.webp', 640, 0.82],
+  // video posters: shown at most ~900px wide, so 1280 is plenty
+  ...['oceanspace', 'lms-legal', 'ontime', 'nouvo-ai', 'chisel', 'oceanmall'].map((n) => [`videos/${n}.jpg`, `videos/${n}.webp`, 1280, 0.78]),
 ]
+const only = process.argv[2]
+const JOBS = ALL_JOBS.filter(([src]) => (!only || src.includes(only)) && fs.existsSync(path.join(IMAGES, src)))
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const server = http.createServer((req, res) => {
@@ -66,14 +71,14 @@ const send = (method, params = {}) =>
 try {
   await send('Page.navigate', { url: 'http://127.0.0.1:5395/' })
   await sleep(500)
-  for (const [src, out, maxW] of JOBS) {
+  for (const [src, out, maxW, quality] of JOBS) {
     const expr = `(async () => {
       const img = new Image(); img.crossOrigin = 'anonymous'; img.src = 'http://127.0.0.1:5395/${src}';
       await img.decode();
       const w = Math.min(${maxW}, img.naturalWidth), h = Math.round(img.naturalHeight * w / img.naturalWidth);
       const c = document.createElement('canvas'); c.width = w; c.height = h;
       const ctx = c.getContext('2d'); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, 0, 0, w, h);
-      return c.toDataURL('image/webp', 0.82);
+      return c.toDataURL('image/webp', ${quality});
     })()`
     const r = await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true })
     const data = r.result.value
