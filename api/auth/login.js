@@ -10,7 +10,8 @@ export default function handler(req, res) {
   const c = config()
   if (!c.ready) {
     res.statusCode = 503
-    return res.end('Admin sign-in is not configured yet.')
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+    return res.end(`Admin sign-in is not configured yet.\n\nCheck these Vercel environment variables (Production), then redeploy:\n- ${c.problems.join('\n- ')}\n`)
   }
   const state = crypto.randomBytes(32).toString('base64url')
   const verifier = crypto.randomBytes(48).toString('base64url')

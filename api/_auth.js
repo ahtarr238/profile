@@ -22,9 +22,15 @@ export function config() {
       .trim()
       .replace(/\/+$/, ''),
   }
-  c.ready = Boolean(
-    c.clientId && c.clientSecret && /^\d+$/.test(c.adminId) && /^[\w.-]+\/[\w.-]+$/.test(c.repo) && /^https:\/\/[a-z0-9.-]+(:\d+)?$/i.test(c.origin),
-  )
+  // names only, never values: safe to show, and it says exactly which setting to fix
+  c.problems = [
+    !c.clientId && 'GITHUB_CLIENT_ID is missing',
+    !c.clientSecret && 'GITHUB_CLIENT_SECRET is missing',
+    !/^\d+$/.test(c.adminId) && 'ADMIN_GITHUB_ID must be digits only',
+    !/^[\w.-]+\/[\w.-]+$/.test(c.repo) && 'GITHUB_REPO must look like owner/name',
+    !/^https:\/\/[a-z0-9.-]+(:\d+)?$/i.test(c.origin) && 'PUBLIC_ORIGIN must look like https://example.com (no path)',
+  ].filter(Boolean)
+  c.ready = c.problems.length === 0
   c.callback = `${c.origin}/api/auth/callback`
   return c
 }
