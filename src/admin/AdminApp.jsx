@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ShieldCheck } from 'lucide-react'
 import { GithubIcon } from '../components/BrandIcons'
 import { GitHub } from './github'
-import { REPO } from './config'
+import { REPO, SESSION_MINUTES } from './config'
 import { Brand, Notice, Shell } from './ui'
 import { friendly, signInError } from './errors'
 import Dashboard from './Dashboard'
@@ -10,14 +10,20 @@ import Dashboard from './Dashboard'
 // Sign-in is GitHub's: the password, the 2FA code and the "is this person allowed" check all
 // happen at GitHub and in /api/auth/callback. This screen only keeps the resulting token for
 // this tab, and GitHub decides what that token can touch (this one repo, nothing else).
+//
+// A session lasts exactly SESSION_MINUTES from sign-in, busy or not. When it ends the token is
+// revoked at GitHub, so it is dead everywhere, and the next visit needs a fresh sign-in.
 
-const IDLE_MINUTES = 30
-const IDLE_MS = IDLE_MINUTES * 60 * 1000
+const SESSION_MS = SESSION_MINUTES * 60 * 1000
 const SESSION = 'ahtar-admin-session'
-const LAST_ACTIVE = 'ahtar-admin-last-active'
 
 const validSession = (s) =>
-  s && typeof s === 'object' && s.repo === REPO && /^ghu_[A-Za-z0-9_]{20,255}$/.test(s.token || '') && Number.isFinite(s.expiresAt)
+  s &&
+  typeof s === 'object' &&
+  s.repo === REPO &&
+  /^ghu_[A-Za-z0-9_]{20,255}$/.test(s.token || '') &&
+  Number.isFinite(s.expiresAt) &&
+  s.expiresAt - Date.now() <= SESSION_MS // nothing can stretch a session past the limit
 
 const store = {
   get() {
@@ -31,7 +37,6 @@ const store = {
   set(s) {
     try {
       sessionStorage.setItem(SESSION, JSON.stringify(s))
-      sessionStorage.setItem(LAST_ACTIVE, String(Date.now()))
     } catch {
       // storage blocked: the session simply won't survive a reload
     }
@@ -39,24 +44,8 @@ const store = {
   clear() {
     try {
       sessionStorage.removeItem(SESSION)
-      sessionStorage.removeItem(LAST_ACTIVE)
     } catch {
       // nothing stored
-    }
-  },
-  touch() {
-    try {
-      sessionStorage.setItem(LAST_ACTIVE, String(Date.now()))
-    } catch {
-      // ignore
-    }
-  },
-  idle() {
-    try {
-      const last = Number(sessionStorage.getItem(LAST_ACTIVE) || 0)
-      return !last || Date.now() - last > IDLE_MS
-    } catch {
-      return true
     }
   },
 }
@@ -94,7 +83,7 @@ function takeSignIn() {
       login: String(p.login || ''),
       repo: p.repo,
       branch: /^[\w./-]+$/.test(p.branch || '') ? p.branch : 'main',
-      expiresAt: Date.now() + Math.min(Number(p.expires_in) || 0, 8 * 3600) * 1000,
+      expiresAt: Date.now() + Math.min((Number(p.expires_in) || 0) * 1000, SESSION_MS),
     }
     if (validSession(session)) out.session = session
   } catch {
@@ -108,9 +97,10 @@ export default function AdminApp() {
   const [session, setSession] = useState(null)
   const [error, setError] = useState('')
 
-  const signOut = useCallback(async () => {
+  const signOut = useCallback(async (message = '') => {
     await endSession(store.get())
     setSession(null)
+    setError(message)
     setStage('login')
   }, [])
 
@@ -135,11 +125,24 @@ export default function AdminApp() {
         if (old && old.token !== fresh.session.token) await endSession(old)
         store.set(fresh.session)
       }
+      // a session saved before an older version of this page (no hard limit) is not trusted either
+      const raw = (() => {
+        try {
+          return JSON.parse(sessionStorage.getItem(SESSION) || 'null')
+        } catch {
+          return null
+        }
+      })()
       const s = store.get()
-      if (!s) return on && setStage('login')
-      if (Date.now() > s.expiresAt || store.idle()) {
+      if (!s) {
+        if (raw?.token) await endSession(raw)
+        return on && setStage('login')
+      }
+      if (Date.now() >= s.expiresAt) {
         await endSession(s)
-        if (on) setStage('login')
+        if (!on) return
+        setError(`Your ${SESSION_MINUTES}-minute session ended. Sign in again.`)
+        setStage('login')
         return
       }
       // the token still has to work and still has write access, or it's no use
@@ -161,27 +164,25 @@ export default function AdminApp() {
     }
   }, [])
 
-  // signs out after a quiet half hour, or when the token runs out, whichever comes first
+  // the hard limit: at expiresAt the session ends and the token is revoked, whatever you're doing
   useEffect(() => {
     if (stage !== 'ready' || !session) return
-    let idle
-    const reset = () => {
-      store.touch()
-      clearTimeout(idle)
-      idle = setTimeout(signOut, IDLE_MS)
+    const t = setTimeout(
+      () => signOut(`Your ${SESSION_MINUTES}-minute session ended. Sign in again.`),
+      Math.max(0, session.expiresAt - Date.now()),
+    )
+    // timers can be paused in a background tab: check again whenever the tab comes back
+    const recheck = () => {
+      if (document.visibilityState === 'visible' && Date.now() >= session.expiresAt) signOut(`Your ${SESSION_MINUTES}-minute session ended. Sign in again.`)
     }
-    const expiry = setTimeout(signOut, Math.max(0, session.expiresAt - Date.now()))
-    const events = ['pointerdown', 'keydown', 'scroll']
-    events.forEach((e) => window.addEventListener(e, reset, { passive: true }))
-    reset()
+    document.addEventListener('visibilitychange', recheck)
     return () => {
-      clearTimeout(idle)
-      clearTimeout(expiry)
-      events.forEach((e) => window.removeEventListener(e, reset))
+      clearTimeout(t)
+      document.removeEventListener('visibilitychange', recheck)
     }
   }, [stage, session, signOut])
 
-  if (stage === 'ready') return <Dashboard session={session} onSignOut={signOut} />
+  if (stage === 'ready') return <Dashboard session={session} onSignOut={() => signOut()} />
 
   return (
     <Shell>
@@ -203,8 +204,8 @@ export default function AdminApp() {
         </div>
       )}
       <p className="mt-12 flex items-center gap-2 text-[12px] text-dim">
-        <ShieldCheck size={14} strokeWidth={1.75} aria-hidden="true" /> Only the site owner’s GitHub account gets in. Signs out after {IDLE_MINUTES}{' '}
-        quiet minutes or when the tab closes.
+        <ShieldCheck size={14} strokeWidth={1.75} aria-hidden="true" /> Only the site owner’s GitHub account gets in. Each sign-in lasts{' '}
+        {SESSION_MINUTES} minutes, then the key is revoked.
       </p>
     </Shell>
   )

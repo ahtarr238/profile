@@ -79,12 +79,17 @@ Klik **Redeploy** di Vercel, lalu buka `https://<web kamu>/admin` → **Sign in 
     link dari orang lain tidak bisa "menitipkan" token palsu. Dashboard juga hanya mau menulis
     ke repo `ahtarr238/profile`.
 - **Token-nya sempit.** GitHub App hanya ter-install di repo `profile` dan hanya punya izin
-  *Contents*, jadi token admin tidak bisa menyentuh repo lain atau setting akun. Token juga
-  kedaluwarsa sendiri dalam 8 jam.
+  *Contents*, jadi token admin tidak bisa menyentuh repo lain atau setting akun.
+- **Setiap login hanya berlaku 30 menit.** Hitungannya sejak login, sibuk atau tidak. Jam
+  hitung mundur ada di bawah nama kamu di dashboard. 5 menit sebelum habis muncul peringatan
+  untuk Publish perubahan. Begitu 30 menit lewat, kamu otomatis keluar dan token-nya
+  **dicabut di GitHub**, jadi tidak bisa dipakai lagi di mana pun. Untuk lanjut, login ulang
+  dan kamu dapat token baru. Durasinya diatur di `src/admin/config.js` (`SESSION_MINUTES`) dan
+  `api/_auth.js` (`SESSION_SECONDS`).
 - **Sesi tidak tertinggal.** Token hanya disimpan di tab itu (tidak di URL atau riwayat) dan
-  hilang dari browser saat tab ditutup. Kalau 30 menit tidak ada aktivitas, kamu otomatis
-  keluar dan token-nya dicabut. Tanpa itu pun, token mati sendiri di GitHub dalam 8 jam.
-  Biasakan menekan **Sign out** supaya token langsung dicabut.
+  hilang dari browser saat tab ditutup. Biasakan menekan **Sign out** supaya token langsung
+  dicabut. Kalau tab ditutup tanpa Sign out, token tetap mati sendiri di GitHub paling
+  lambat 8 jam (batas bawaan GitHub).
 - **Client secret tidak pernah sampai ke browser.** Secret hanya ada di server Vercel
   (`/api/auth/*`).
 - **Semua perubahan tercatat.** Setiap Publish adalah commit, jadi kesalahan bisa di-revert dari

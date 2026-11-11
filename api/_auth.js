@@ -8,6 +8,10 @@
 //   PUBLIC_ORIGIN         the live site, e.g. https://ahtar.vercel.app (never taken from request headers)
 import crypto from 'node:crypto'
 
+// one sign-in lasts this long; the dashboard revokes the token when it runs out
+// (keep in step with SESSION_MINUTES in src/admin/config.js)
+export const SESSION_SECONDS = 30 * 60
+
 export const STATE_COOKIE = '__Host-admin_oauth_state'
 export const PKCE_COOKIE = '__Host-admin_pkce'
 export const HANDOFF_COOKIE = '__Host-admin_handoff'

@@ -8,6 +8,7 @@
 import {
   HANDOFF_COOKIE,
   PKCE_COOKIE,
+  SESSION_SECONDS,
   STATE_COOKIE,
   backWithError,
   config,
@@ -60,7 +61,7 @@ export default async function handler(req, res) {
     const handoff = Buffer.from(
       JSON.stringify({
         token,
-        expires_in: Math.min(Number(data.expires_in) || 8 * 3600, 8 * 3600),
+        expires_in: Math.min(Number(data.expires_in) || SESSION_SECONDS, SESSION_SECONDS),
         login: user.login,
         repo: c.repo,
         branch: repo.default_branch || 'main',

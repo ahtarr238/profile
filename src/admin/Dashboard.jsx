@@ -5,6 +5,8 @@ import { checkVideo, imageToWebp, MAX_VIDEO_MB, pdfToWebp, videoPoster } from '.
 import { Brand, Btn, Field, Notice, Shell } from './ui'
 import { friendly } from './errors'
 import StatsPanel from './StatsPanel'
+import { SessionClock, SessionWarning } from './SessionClock'
+import { useTimeLeft } from './useTimeLeft'
 
 const slugify = (s) =>
   s
@@ -251,6 +253,7 @@ function Editor({ kind, row, taken, previewOf, onClose, onDone }) {
 
 export default function Dashboard({ session, onSignOut }) {
   const gh = useMemo(() => new GitHub(session), [session])
+  const timeLeft = useTimeLeft(session.expiresAt)
   const [tab, setTab] = useState('visitors')
   const [base, setBase] = useState(null) // { head, cms } as on GitHub
   const [draft, setDraft] = useState(null)
@@ -408,9 +411,10 @@ export default function Dashboard({ session, onSignOut }) {
           </Btn>
         </div>
       </header>
-      <p className="mt-2 text-[13px] text-dim">
-        Signed in as {session.login} · saves to {session.repo}
+      <p className="mt-2 flex flex-wrap items-center gap-x-2 text-[13px] text-dim">
+        Signed in as {session.login} · saves to {session.repo} · <SessionClock left={timeLeft} />
       </p>
+      <SessionWarning left={timeLeft} dirty={dirty} />
 
       {/* unsaved changes bar */}
       <div
