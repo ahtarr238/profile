@@ -4,7 +4,7 @@ export const profile = {
   role: 'Solution engineer',
   location: 'Bogor, West Java',
   school: 'SMK Wikrama',
-  photo: '/images/Ahtar-PP.jpeg',
+  photo: '/images/ahtar.webp',
 }
 
 export const hero = {
@@ -26,8 +26,8 @@ export const about = {
   note: 'solution engineer',
   // Counted from this page and the old portfolio (Ocean Space and Berkah Global Andalan are the company sites)
   stats: [
-    { value: '3', label: 'projects featured' },
-    { value: '3', label: 'certified courses' },
+    { value: '6', label: 'projects featured' },
+    { value: '7', label: 'certificates earned' },
     { value: '6', label: 'tools in my stack' },
     { value: '2', label: 'company websites' },
   ],
@@ -43,13 +43,39 @@ export const tools = [
   { name: 'JavaScript', icon: '/icons/javascript-original.svg' },
 ]
 
+// Newest first. `verify` is the issuer's public verification page, when there is one.
 export const certificates = [
+  {
+    id: 'myskill-claude-agent',
+    title: 'AI Agent with Claude AI Specialization',
+    issuer: 'MySkill / Education Alliance Finland · 5 courses',
+    date: 'Nov 11, 2026',
+    image: '/images/cert-myskill-claude-agent.webp',
+    alt: 'MySkill Certificate of Skill Specialization in AI Agent with Claude AI, 5 courses completed',
+  },
+  {
+    id: 'myskill-react-spec',
+    title: 'Frontend React Specialization',
+    issuer: 'MySkill / Education Alliance Finland · 19 courses',
+    date: 'Nov 11, 2026',
+    image: '/images/cert-myskill-react-spec.webp',
+    alt: 'MySkill Certificate of Skill Specialization in Frontend React, 19 courses completed',
+  },
+  {
+    id: 'dicoding-financial',
+    title: 'Introduction to Financial Literacy',
+    issuer: 'Dicoding Indonesia · Coding Camp by DBS Foundation',
+    date: 'Jan 2, 2026',
+    image: '/images/cert-dicoding-financial.webp',
+    alt: 'Dicoding certificate for Introduction to Financial Literacy',
+    verify: 'https://www.dicoding.com/certificates/2VX3VK2LQPYQ',
+  },
   {
     id: 'myskill-react',
     title: 'Introduction to React',
     issuer: 'MySkill / Education Alliance Finland',
     date: 'Oct 15, 2025',
-    image: '/images/react-certi.png',
+    image: '/images/cert-myskill-react.webp',
     alt: 'MySkill certificate for Introduction to React',
   },
   {
@@ -57,15 +83,24 @@ export const certificates = [
     title: 'Introduction to Dart and Flutter',
     issuer: 'MySkill / Education Alliance Finland',
     date: 'Sep 30, 2025',
-    image: '/images/flutter-certi.png',
+    image: '/images/cert-myskill-flutter.webp',
     alt: 'MySkill certificate for Introduction to Dart and Flutter',
+  },
+  {
+    id: 'dicoding-ai',
+    title: 'Belajar Dasar AI',
+    issuer: 'Dicoding Indonesia',
+    date: 'Sep 30, 2025',
+    image: '/images/cert-dicoding-ai.webp',
+    alt: 'Dicoding certificate for Belajar Dasar AI',
+    verify: 'https://www.dicoding.com/certificates/1OP872LV8ZQK',
   },
   {
     id: 'dicoding-web',
     title: 'Belajar Dasar Pemrograman Web',
     issuer: 'Dicoding Indonesia',
     date: 'Oct 7, 2024',
-    image: '/images/CertiDicoding_DasarWeb-1.png',
+    image: '/images/cert-dicoding-web.webp',
     alt: 'Dicoding certificate for Belajar Dasar Pemrograman Web',
   },
 ]
@@ -99,10 +134,38 @@ export const projects = [
     video: '/videos/ontime.mp4',
     poster: '/videos/ontime.jpg',
   },
+  {
+    id: 'nouvo-ai',
+    title: 'Nouvo AI',
+    description:
+      'A calm personal workspace where an AI helper named Simon takes on each task in your projects, and every task keeps its own tab and conversation.',
+    tags: ['AI helper', 'Task workspace', 'Personal project'],
+    video: '/videos/nouvo-ai.mp4',
+    poster: '/videos/nouvo-ai.jpg',
+  },
+  {
+    id: 'chisel',
+    title: 'Chisel',
+    description:
+      'Chisel lets Roblox creators describe their game idea in plain words, then makes the changes for them right inside Roblox Studio, step by step.',
+    tags: ['Roblox game creation', 'Plain-language building', 'Creator tool'],
+    video: '/videos/chisel.mp4',
+    poster: '/videos/chisel.jpg',
+  },
+  {
+    id: 'oceanmall',
+    title: 'OceanMall Online Store',
+    role: 'Contributor', // team project: Ahtar contributed, he did not build it alone
+    description:
+      'An online gadget and lifestyle store where shoppers in Indonesia browse products, add them to a cart, check out and follow their orders, on the web or on their phone. I contributed to this project as part of the team.',
+    tags: ['Online shopping', 'Store website', 'Phone shopping'],
+    video: '/videos/oceanmall.mp4',
+    poster: '/videos/oceanmall.jpg',
+  },
 ]
 
 export const contact = {
-  note: 'Tell me what you need. I read every message and reply by email.',
+  note: 'Four quick questions, most of them one tap. Your answers land straight in my WhatsApp or inbox, and I reply personally.',
   email: 'ahtarmaulana23@gmail.com',
   phone: '+62 8786 4322 667',
   phoneHref: 'tel:+6287864322667',
@@ -116,7 +179,7 @@ export const socials = [
 
 export const nav = [
   { id: 'about', label: 'About' },
-  { id: 'certificates', label: 'Certificates' },
   { id: 'projects', label: 'Projects' },
+  { id: 'certificates', label: 'Certificates' },
   { id: 'contact', label: 'Contact' },
 ]

@@ -33,6 +33,8 @@ export default function Hero() {
     <section id="top" className="relative">
       <ParallaxComponent
         layers={LAYERS}
+        // shorter on phones: about one screen of scenery before About slides over
+        length="h-[250svh] md:h-[300svh]"
         title={
           <h1 className="-mt-[6vh] px-4 text-center">
             <span className="sr-only">

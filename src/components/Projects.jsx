@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, useInView } from 'motion/react'
-import { Volume2, VolumeX } from 'lucide-react'
+import { Maximize2, Volume2, VolumeX } from 'lucide-react'
 import { projects } from '../data/content'
 import Tag from './Tag'
 import RevealText from './RevealText'
+import SwipeDots from './SwipeDots'
 
 const ease = [0.22, 1, 0.36, 1]
 
@@ -11,7 +12,7 @@ const ease = [0.22, 1, 0.36, 1]
 function ProjectVideo({ project }) {
   const ref = useRef(null)
   const frameRef = useRef(null)
-  const open = useInView(frameRef, { once: true, amount: 0.3 })
+  const open = useInView(frameRef, { once: true, amount: 0.05 })
   const [muted, setMuted] = useState(true)
 
   useEffect(() => {
@@ -36,75 +37,136 @@ function ProjectVideo({ project }) {
     if (!video.muted) video.play().catch(() => {})
   }
 
+  // Full screen with sound, and sideways on phones that allow it, so the captions are readable.
+  const expand = async () => {
+    const video = ref.current
+    if (!video) return
+    video.muted = false
+    setMuted(false)
+    video.play().catch(() => {})
+    try {
+      if (video.requestFullscreen) await video.requestFullscreen()
+      else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen() // iPhone Safari
+      await screen.orientation?.lock?.('landscape')
+    } catch {
+      // full screen or rotation refused: the video simply keeps playing in place
+    }
+  }
+
+  // leaving full screen puts the video back to its quiet, muted loop
+  useEffect(() => {
+    const video = ref.current
+    if (!video) return
+    const onChange = () => {
+      if (document.fullscreenElement) return
+      screen.orientation?.unlock?.()
+      video.muted = true
+      setMuted(true)
+    }
+    document.addEventListener('fullscreenchange', onChange)
+    video.addEventListener('webkitendfullscreen', onChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', onChange)
+      video.removeEventListener('webkitendfullscreen', onChange)
+    }
+  }, [])
+
+  const control =
+    'inline-flex size-10 items-center justify-center gap-2 rounded-[4px] bg-ground/80 text-[13px] text-sky-soft transition-colors duration-150 ease-out hover:bg-coral hover:text-ground'
+
   return (
     // The curtain watches this unclipped wrapper: a fully clipped element never
     // counts as "on screen", so watching the frame itself would keep it shut.
+    // On phones the frame drops its white border, so the video fills its swipe slide.
     <div ref={frameRef}>
-    <motion.div
-      // curtain: the frame opens from the bottom up as it comes on screen
-      initial={{ clipPath: 'inset(100% 0% 0% 0% round 10px)' }}
-      animate={{ clipPath: open ? 'inset(0% 0% 0% 0% round 10px)' : 'inset(100% 0% 0% 0% round 10px)' }}
-      transition={{ duration: 1.1, ease }}
-      className="group relative overflow-hidden rounded-[10px] bg-white p-2 md:p-3"
-    >
-      <div className="relative aspect-video overflow-hidden rounded-[6px] bg-tile">
-        <video
-          ref={ref}
-          src={project.video}
-          poster={project.poster}
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-label={`Intro video for ${project.title}`}
-          className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
-        />
-        <button
-          type="button"
-          onClick={toggleSound}
-          aria-pressed={!muted}
-          aria-label={muted ? 'Sound on' : 'Sound off'}
-          className="absolute right-2 bottom-2 inline-flex size-9 items-center justify-center gap-2 rounded-[4px] bg-ground/80 text-[13px] text-sky-soft transition-colors duration-150 ease-out hover:bg-coral hover:text-ground sm:right-3 sm:bottom-3 sm:h-10 sm:w-auto sm:px-3"
-        >
-          {muted ? <VolumeX size={16} strokeWidth={1.75} aria-hidden="true" /> : <Volume2 size={16} strokeWidth={1.75} aria-hidden="true" />}
-          <span className="hidden sm:inline">{muted ? 'Sound on' : 'Sound off'}</span>
-        </button>
-      </div>
-    </motion.div>
+      <motion.div
+        // curtain: the frame opens from the bottom up as it comes on screen
+        initial={{ clipPath: 'inset(100% 0% 0% 0% round 10px)' }}
+        animate={{ clipPath: open ? 'inset(0% 0% 0% 0% round 10px)' : 'inset(100% 0% 0% 0% round 10px)' }}
+        transition={{ duration: 1.1, ease }}
+        className="group relative overflow-hidden rounded-[10px] bg-white md:p-3"
+      >
+        <div className="relative aspect-video overflow-hidden bg-tile md:rounded-[6px]">
+          <video
+            ref={ref}
+            src={project.video}
+            poster={project.poster}
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            aria-label={`Intro video for ${project.title}`}
+            onClick={() => {
+              // phones: a tap opens it big; desktop keeps the buttons for that
+              if (window.matchMedia('(max-width: 767px)').matches) expand()
+            }}
+            className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+          />
+          <div className="absolute right-2 bottom-2 flex gap-2 sm:right-3 sm:bottom-3">
+            <button
+              type="button"
+              onClick={toggleSound}
+              aria-pressed={!muted}
+              aria-label={muted ? 'Sound on' : 'Sound off'}
+              className={`${control} sm:w-auto sm:px-3`}
+            >
+              {muted ? <VolumeX size={16} strokeWidth={1.75} aria-hidden="true" /> : <Volume2 size={16} strokeWidth={1.75} aria-hidden="true" />}
+              <span className="hidden sm:inline">{muted ? 'Sound on' : 'Sound off'}</span>
+            </button>
+            <button type="button" onClick={expand} aria-label={`Watch ${project.title} full screen`} className={control}>
+              <Maximize2 size={16} strokeWidth={1.75} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      </motion.div>
     </div>
   )
 }
 
 export default function Projects() {
+  const rowRef = useRef(null)
   if (!projects.length) return null
 
   return (
     <section id="projects" className="relative overflow-hidden">
       <div aria-hidden="true" className="glow -right-56 top-[12%] h-[700px] w-[460px] opacity-70" />
 
-      <div className="relative mx-auto max-w-[1320px] px-6 pb-28 md:px-10 md:pb-40">
+      <div className="relative mx-auto max-w-[1320px] px-6 pb-24 md:px-10 md:pb-40">
         <RevealText text="Projects" accent="." className="font-display text-[clamp(72px,15vw,230px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft" />
 
-        <ol className="mt-14 space-y-20 md:mt-20 md:space-y-28">
+        {/* phones: one project per swipe; desktop: alternating rows */}
+        <ol
+          ref={rowRef}
+          data-lenis-prevent-touch
+          className="no-scrollbar -mx-6 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-6 px-6 md:mx-0 md:mt-20 md:block md:snap-none md:space-y-28 md:overflow-visible md:px-0"
+        >
           {projects.map((p, i) => (
             <motion.li
               key={p.id}
               initial={{ opacity: 0, y: 28 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
+              viewport={{ once: true, amount: 0.05 }}
               transition={{ duration: 0.7, ease }}
-              className="grid gap-8 md:grid-cols-12 md:items-center md:gap-10"
+              className="grid w-[84vw] shrink-0 snap-start content-start gap-6 md:w-auto md:grid-cols-12 md:items-center md:gap-10"
             >
               <div className={`md:col-span-8 ${i % 2 === 1 ? 'md:order-2' : ''}`}>
                 <ProjectVideo project={p} />
               </div>
               <div className={`md:col-span-4 ${i % 2 === 1 ? 'md:order-1' : ''}`}>
-                <span className="font-display text-[15px] text-coral tabular-nums">0{i + 1}</span>
-                <h3 className="font-display mt-2 text-[36px] leading-[1] font-normal tracking-[-0.03em] text-sky-soft md:text-[44px]">
+                <div className="flex items-center gap-3">
+                  <span className="font-display text-[15px] text-coral tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+                  {/* set role: 'Contributor' on projects Ahtar worked on as part of a team */}
+                  {p.role && (
+                    <span className="inline-flex h-7 items-center rounded-[4px] border border-coral/70 px-2.5 text-[12px] text-coral">
+                      {p.role}
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-display mt-2 text-[30px] leading-[1.05] font-normal tracking-[-0.03em] text-sky-soft md:text-[44px]">
                   {p.title}
                 </h3>
-                <p className="mt-5 text-[16px] leading-7 text-mist">{p.description}</p>
-                <ul className="mt-6 flex flex-wrap gap-2">
+                <p className="mt-4 text-[15px] leading-7 text-mist md:mt-5 md:text-[16px]">{p.description}</p>
+                <ul className="mt-5 flex flex-wrap gap-2 md:mt-6">
                   {p.tags.map((t) => (
                     <li key={t}>
                       <Tag>{t}</Tag>
@@ -115,6 +177,7 @@ export default function Projects() {
             </motion.li>
           ))}
         </ol>
+        <SwipeDots scrollerRef={rowRef} count={projects.length} />
       </div>
     </section>
   )

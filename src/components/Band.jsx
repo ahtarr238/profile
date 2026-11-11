@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { motion, useAnimationFrame, useMotionValue, useScroll, useSpring, useTransform, useVelocity } from 'motion/react'
+import { motion, useAnimationFrame, useInView, useMotionValue, useScroll, useSpring, useTransform, useVelocity } from 'motion/react'
 import { band } from '../data/content'
 
 const wrap = (min, max, v) => {
@@ -13,6 +13,8 @@ const wrap = (min, max, v) => {
  */
 export default function Band() {
   const base = useMotionValue(0)
+  const sectionRef = useRef(null)
+  const onScreen = useInView(sectionRef) // no work at all while the band is off screen
   const { scrollY } = useScroll()
   const velocity = useSpring(useVelocity(scrollY), { damping: 50, stiffness: 400 })
   const boost = useTransform(velocity, [-1500, 0, 1500], [-6, 0, 6], { clamp: false })
@@ -21,6 +23,7 @@ export default function Band() {
   const x = useTransform(base, (v) => `${wrap(-50, 0, v)}%`)
 
   useAnimationFrame((_, delta) => {
+    if (!onScreen) return
     const b = boost.get()
     if (b < 0) dir.current = -1
     else if (b > 0) dir.current = 1
@@ -42,7 +45,7 @@ export default function Band() {
   )
 
   return (
-    <section aria-label="What I do" className="relative h-[180px] overflow-hidden md:h-[240px]">
+    <section ref={sectionRef} aria-label="What I do" className="relative h-[180px] overflow-hidden md:h-[240px]">
       <div
         onMouseEnter={() => pace.set(0)}
         onMouseLeave={() => pace.set(1)}

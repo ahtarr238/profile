@@ -25,10 +25,13 @@ export default function App() {
         <Nav />
         <main>
           <Hero />
-          <Band />
-          <About />
-          <Certificates />
+          {/* slides up over the last screen of the pinned hero, so the scene hands straight over to About */}
+          <div className="relative z-10 -mt-[100svh] rounded-t-[32px] bg-ground shadow-[0_-40px_90px_rgb(0_0_0/0.5)] md:rounded-t-[48px]">
+            <Band />
+            <About />
+          </div>
           <Projects />
+          <Certificates />
           <Contact />
         </main>
         <Footer />

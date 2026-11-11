@@ -28,9 +28,10 @@ function Layer({ name, src, priority }) {
  * @param {{ back: string, middle: string, front: string }} layers  image URLs, far to near
  * @param {React.ReactNode} title     sits between the middle and front layers
  * @param {React.ReactNode} children  overlay content at the foot of the scene; fades out first
- * @param {string} length             scroll length of the pinned scene (Tailwind height class)
+ * @param {string} length             scroll length of the pinned scene (Tailwind height class). The section
+ *                                    after it overlaps the last screen (-mt-[100svh]) and slides over the scene.
  */
-export function ParallaxComponent({ layers, title, children, length = 'h-[220svh]', className = '' }) {
+export function ParallaxComponent({ layers, title, children, length = 'h-[300svh]', className = '' }) {
   const rootRef = useRef(null)
   const lenis = useLenisInstance()
 
@@ -47,11 +48,9 @@ export function ParallaxComponent({ layers, title, children, length = 'h-[220svh
       tl.to('[data-parallax-layer="back"]', { scale: 1.1, transformOrigin: '50% 62%' }, 0)
         .to('[data-parallax-layer="middle"]', { scale: 1.32, yPercent: 3, transformOrigin: '60% 55%' }, 0)
         .to('[data-parallax-layer="title"]', { scale: 0.86, yPercent: -12 }, 0)
-        .to('[data-parallax-layer="title"]', { opacity: 0, duration: 0.35 }, 0.6)
+        .to('[data-parallax-layer="title"]', { opacity: 0, duration: 0.3 }, 0.45)
         .to('[data-parallax-layer="front"]', { scale: 1.9, transformOrigin: '50% 0%' }, 0)
         .to('[data-parallax-content]', { opacity: 0, y: 60, duration: 0.25 }, 0)
-        // the scene dims into the page ground before the next section
-        .to('[data-parallax-dim]', { opacity: 1, duration: 0.3 }, 0.7)
     }, root)
     return () => ctx.revert()
   }, [])
@@ -73,7 +72,6 @@ export function ParallaxComponent({ layers, title, children, length = 'h-[220svh
           {title}
         </div>
         <Layer name="front" src={layers.front} />
-        <div data-parallax-dim aria-hidden="true" className="pointer-events-none absolute inset-0 bg-ground opacity-0" />
         <div data-parallax-content className="absolute inset-0 z-10 flex flex-col justify-end">
           {children}
         </div>

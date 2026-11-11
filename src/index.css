@@ -78,16 +78,6 @@ html.lenis body {
   overflow: clip;
 }
 
-/* The coral light drifts slowly */
-@keyframes drift {
-  50% {
-    transform: translate3d(36px, -48px, 0) scale(1.08);
-  }
-}
-.glow {
-  animation: drift 16s ease-in-out infinite;
-  will-change: transform;
-}
 
 
 /* The coral dot (Cursor.jsx) replaces the system pointer on mouse devices.
@@ -96,5 +86,13 @@ html.lenis body {
   html.custom-cursor,
   html.custom-cursor * {
     cursor: none !important;
+  }
+}
+
+/* Horizontal swipe rows on phones: no visible scrollbar */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
