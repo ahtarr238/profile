@@ -6,14 +6,15 @@ const ease = [0.22, 1, 0.36, 1]
 /**
  * Big type that rises letter by letter from behind a mask when it comes on screen.
  * `text` may hold "\n" for line breaks; `accent` is a trailing piece in coral (like ".").
- * `onLoad` plays it right away instead of waiting for the scroll.
+ * `onLoad` plays it right away instead of waiting for the scroll; `hold` keeps it hidden until it turns false
+ * (the hero waits for the loading screen).
  * Screen readers get the plain words (aria-label on headings, an sr-only copy on spans) instead of
  * letter-by-letter spans. `decorative` hides it all, for when the parent already says it.
  */
-export default function RevealText({ text, accent = '', as: Tag = 'h2', className = '', delay = 0, stagger = 0.035, onLoad = false, decorative = false }) {
+export default function RevealText({ text, accent = '', as: Tag = 'h2', className = '', delay = 0, stagger = 0.035, onLoad = false, hold = false, decorative = false }) {
   const ref = useRef(null)
   const seen = useInView(ref, { once: true, amount: 0.35 })
-  const show = onLoad || seen
+  const show = !hold && (onLoad || seen)
   const lines = text.split('\n')
   // where each line starts in the overall letter count, so the stagger runs across lines
   const starts = lines.map((_, i) => lines.slice(0, i).reduce((sum, l) => sum + l.length, 0))

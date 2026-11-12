@@ -97,3 +97,24 @@ html.lenis body {
     display: none;
   }
 }
+
+/* Hero clouds: a slow sideways drift, on a wrapper a little bigger than the screen so no edge shows.
+   (The scroll parallax moves the image inside it; the two transforms never touch.) */
+@keyframes cloud-drift {
+  from {
+    transform: translateX(-2.5%);
+  }
+  to {
+    transform: translateX(2.5%);
+  }
+}
+.cloud-drift {
+  animation: cloud-drift 70s ease-in-out infinite alternate;
+  will-change: transform;
+}
+.cloud-drift-reverse {
+  animation-duration: 48s;
+  animation-direction: alternate-reverse;
+}
+
+

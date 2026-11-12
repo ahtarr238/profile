@@ -1,4 +1,5 @@
-import { motion } from 'motion/react'
+import { useRef } from 'react'
+import { motion, useInView, useScroll, useSpring, useTransform } from 'motion/react'
 import { about, certificates, profile, projects, tools } from '../data/content'
 import RevealText from './RevealText'
 import CountUp from './CountUp'
@@ -13,9 +14,82 @@ const rise = (delay = 0) => ({
   transition: { duration: 0.8, ease, delay },
 })
 
+/** The portrait opens like the project videos (a curtain from the bottom) and drifts inside its frame. */
+function Portrait({ src, alt }) {
+  const frameRef = useRef(null)
+  const open = useInView(frameRef, { once: true, amount: 0.15 })
+  const { scrollYProgress } = useScroll({ target: frameRef, offset: ['start end', 'end start'] })
+  const y = useTransform(scrollYProgress, [0, 1], ['-4%', '4%'])
+
+  return (
+    <div ref={frameRef}>
+      <motion.div
+        initial={{ clipPath: 'inset(100% 0% 0% 0% round 8px)' }}
+        animate={{ clipPath: open ? 'inset(0% 0% 0% 0% round 8px)' : 'inset(100% 0% 0% 0% round 8px)' }}
+        transition={{ duration: 1.1, ease }}
+        className="group overflow-hidden rounded-[8px] bg-tile"
+      >
+        <motion.img
+          src={src}
+          alt={alt}
+          width="640"
+          height="850"
+          loading="lazy"
+          style={{ y, scale: 1.08 }}
+          className="aspect-[4/5] w-full object-cover object-[50%_18%] grayscale transition-[filter] duration-700 ease-out group-hover:grayscale-0"
+        />
+      </motion.div>
+    </div>
+  )
+}
+
+/** The opening line lights up word by word as it scrolls through the screen. */
+function ScrollLine({ text, className }) {
+  const ref = useRef(null)
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 0.85', 'end 0.5'] })
+  const words = text.split(' ')
+
+  return (
+    <p ref={ref} className={className}>
+      {words.map((w, i) => (
+        <Word key={i} progress={scrollYProgress} range={[i / words.length, (i + 1) / words.length]}>
+          {w}
+        </Word>
+      ))}
+    </p>
+  )
+}
+
+function Word({ children, progress, range }) {
+  const opacity = useTransform(progress, range, [0.18, 1])
+  return (
+    <>
+      <motion.span style={{ opacity }}>{children}</motion.span>{' '}
+    </>
+  )
+}
+
+/**
+ * The title arrives from in front of the camera, carrying on the hero's push-in:
+ * it starts large and faint and settles into place as it comes up the screen.
+ */
+function ApproachingTitle({ children }) {
+  const ref = useRef(null)
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'start 0.3'] })
+  const p = useSpring(scrollYProgress, { stiffness: 120, damping: 28, mass: 0.5 })
+  const scale = useTransform(p, [0, 1], [1.3, 1])
+  const opacity = useTransform(p, [0, 0.55], [0, 1])
+  const y = useTransform(p, [0, 1], ['18%', '0%'])
+  return (
+    <motion.div ref={ref} style={{ scale, opacity, y, transformOrigin: '0% 100%' }} className="will-change-transform">
+      {children}
+    </motion.div>
+  )
+}
+
 export default function About() {
   const { t } = useLang()
-  const [lead, ...rest] = t('about.paragraphs')
+  const [lead] = t('about.paragraphs')
   const details = [
     { label: t('about.details.based'), value: t('profile.location') },
     { label: t('about.details.studying'), value: t('about.studyingValue', { school: profile.school }) },
@@ -29,26 +103,21 @@ export default function About() {
     <section id="about" className="relative overflow-hidden">
       <div aria-hidden="true" className="glow -right-64 bottom-0 h-[620px] w-[520px] opacity-50" />
 
-      <div className="relative mx-auto max-w-[1320px] px-6 pt-12 pb-20 md:px-10 md:pt-24 md:pb-36">
-        <p className="mb-4 text-[15px] font-medium text-coral">{t('about.eyebrow')}</p>
-        <RevealText
-          text={t('about.title')}
-          className="font-display text-[clamp(64px,10vw,160px)] leading-[0.9] font-normal tracking-[-0.05em] text-sky-soft"
-        />
+      <div className="relative mx-auto max-w-[1320px] px-6 pt-8 pb-12 md:px-10 md:pt-14 md:pb-16">
+        <ApproachingTitle>
+          <RevealText
+            text={t('about.title')}
+            accent="."
+            className="font-display text-[clamp(64px,13vw,200px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft"
+          />
+        </ApproachingTitle>
 
         <div className="mt-10 grid gap-10 md:mt-16 md:grid-cols-12 md:gap-16">
           {/* portrait, with the short facts under it */}
-          {/* phones: a small photo beside the facts; desktop: a tall portrait over them */}
-          <motion.figure {...rise()} className="grid grid-cols-[112px_1fr] items-start gap-5 md:col-span-5 md:block">
-            <div className="group overflow-hidden rounded-[8px] bg-tile">
-              <img
-                src={profile.photo}
-                alt={t('about.portraitAlt', { name: profile.name })}
-                width="640"
-                height="850"
-                loading="lazy"
-                className="aspect-[4/5] w-full object-cover object-[50%_18%] grayscale transition-[filter,transform] duration-700 ease-out group-hover:scale-[1.02] group-hover:grayscale-0"
-              />
+          {/* phones: a small photo beside the facts; desktop: a modest portrait over them */}
+          <motion.figure className="grid grid-cols-[104px_1fr] items-start gap-5 md:col-span-4 md:block">
+            <div className="md:max-w-[280px]">
+              <Portrait src={profile.photo} alt={t('about.portraitAlt', { name: profile.name })} />
             </div>
             <figcaption>
               <dl className="border-t border-sky-soft/15 md:mt-6">
@@ -63,15 +132,8 @@ export default function About() {
           </motion.figure>
 
           {/* the story, the figures, the tools */}
-          <div className="md:col-span-7">
-            <motion.p {...rise(0.05)} className="font-display text-[26px] leading-[1.25] text-sky-soft md:text-[34px]">
-              {lead}
-            </motion.p>
-            <motion.div {...rise(0.12)} className="mt-8 max-w-[38rem] space-y-5 text-[17px] leading-8 text-mist">
-              {rest.map((p) => (
-                <p key={p}>{p}</p>
-              ))}
-            </motion.div>
+          <div className="md:col-span-8">
+            <ScrollLine text={lead} className="font-display text-[26px] leading-[1.25] text-sky-soft md:text-[34px]" />
 
             <ul className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 md:mt-14">
               {stats.map((s, i) => (

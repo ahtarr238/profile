@@ -4,7 +4,7 @@
 
 export const dict = {
   en: {
-    skip: 'Skip to content',
+    loading: 'Loading',
     lang: { label: 'Language', switchTo: 'Ganti ke Bahasa Indonesia' },
     nav: {
       main: 'Main',
@@ -24,14 +24,10 @@ export const dict = {
     },
     profile: { role: 'Solution engineer', location: 'Bogor, West Java' },
     about: {
-      eyebrow: 'About',
       title: 'About me',
       portraitAlt: 'Portrait of {name}',
-      paragraphs: [
-        'Coding started as a curiosity at school. It turned into the work I want to do: building web apps that are useful and good to use.',
-        'I take a problem from the first question to the shipped page. I work out how the app should behave, design the screens and write the code on both sides, with React and Tailwind CSS on the front and Laravel behind it.',
-        'One of those apps is live today: the company website for Berkah Global Andalan.',
-      ],
+      // one line; the facts, figures and tools below say the rest
+      paragraphs: ['I build web apps that are useful and good to use, from the first idea to the live page.'],
       details: { based: 'Based in', studying: 'Studying', role: 'Role' },
       studyingValue: 'Informatics, {school}',
       stats: {
@@ -48,8 +44,15 @@ export const dict = {
       soundOn: 'Sound on',
       soundOff: 'Sound off',
       fullscreen: 'Watch {title} full screen',
-      swipe: 'Swipe',
       contributor: 'Contributor',
+      detail: 'Details',
+      detailOf: 'Details for {title}',
+      close: 'Close',
+      next: 'Next project',
+      prev: 'Previous project',
+      hint: 'Drag or swipe for more',
+      goTo: 'Go to project {n}: {title}',
+      position: 'Project {n} of {total}',
     },
     certs: {
       title: 'Certificates',
@@ -132,7 +135,7 @@ export const dict = {
   },
 
   id: {
-    skip: 'Langsung ke konten',
+    loading: 'Memuat',
     lang: { label: 'Bahasa', switchTo: 'Switch to English' },
     nav: {
       main: 'Utama',
@@ -152,14 +155,9 @@ export const dict = {
     },
     profile: { role: 'Solution engineer', location: 'Bogor, Jawa Barat' },
     about: {
-      eyebrow: 'Tentang',
       title: 'Tentang saya',
       portraitAlt: 'Foto {name}',
-      paragraphs: [
-        'Ngoding berawal dari rasa penasaran di sekolah. Sekarang itulah pekerjaan yang ingin saya tekuni: membangun web app yang berguna dan enak dipakai.',
-        'Saya menangani masalah dari pertanyaan pertama sampai halaman yang sudah live. Saya merancang cara kerja aplikasinya, mendesain tampilannya, dan menulis kodenya di kedua sisi: React dan Tailwind CSS di depan, Laravel di belakang.',
-        'Salah satunya sudah live hari ini: website perusahaan Berkah Global Andalan.',
-      ],
+      paragraphs: ['Saya membangun web app yang berguna dan enak dipakai, dari ide pertama sampai halaman live.'],
       details: { based: 'Domisili', studying: 'Pendidikan', role: 'Peran' },
       studyingValue: 'Informatika, {school}',
       stats: {
@@ -176,8 +174,15 @@ export const dict = {
       soundOn: 'Nyalakan suara',
       soundOff: 'Matikan suara',
       fullscreen: 'Tonton {title} layar penuh',
-      swipe: 'Geser',
       contributor: 'Kontributor',
+      detail: 'Detail',
+      detailOf: 'Detail {title}',
+      close: 'Tutup',
+      next: 'Proyek berikutnya',
+      prev: 'Proyek sebelumnya',
+      hint: 'Geser untuk proyek lain',
+      goTo: 'Ke proyek {n}: {title}',
+      position: 'Proyek {n} dari {total}',
     },
     certs: {
       title: 'Sertifikat',

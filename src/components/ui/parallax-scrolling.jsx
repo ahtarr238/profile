@@ -25,7 +25,10 @@ function Layer({ name, src, priority }) {
 }
 
 /**
- * @param {{ back: string, middle: string, front: string }} layers  image URLs, far to near
+ * @param {{ back: string, middle: string, clouds?: string, wisps?: string, front: string }} layers  image URLs, far to near.
+ *                                    clouds (a deck receding to the horizon) sit between the sky and the middle
+ *                                    layer, so the far range stands in front of them; wisps (low mist) sit in front
+ *                                    of the title, behind the front layer. Both drift slowly sideways.
  * @param {React.ReactNode} title     sits between the middle and front layers
  * @param {React.ReactNode} children  overlay content at the foot of the scene; fades out first
  * @param {string} length             scroll length of the pinned scene (Tailwind height class). The section
@@ -50,6 +53,10 @@ export function ParallaxComponent({ layers, title, children, length = 'h-[300svh
         .to('[data-parallax-layer="title"]', { scale: 0.86, yPercent: -12 }, 0)
         .to('[data-parallax-layer="title"]', { opacity: 0, duration: 0.3 }, 0.45)
         .to('[data-parallax-layer="front"]', { scale: 1.9, transformOrigin: '50% 0%' }, 0)
+        // the cloud deck is far, between the sky and the far range; the low mist is near, so it
+        // swells and slides down out of frame, as if the camera passes through it
+        .to('[data-parallax-layer="clouds"]', { scale: 1.2, transformOrigin: '50% 62%' }, 0)
+        .to('[data-parallax-layer="wisps"]', { scale: 1.8, yPercent: 8, transformOrigin: '50% 76%' }, 0)
         .to('[data-parallax-content]', { opacity: 0, y: 60, duration: 0.25 }, 0)
     }, root)
     return () => ctx.revert()
@@ -67,10 +74,20 @@ export function ParallaxComponent({ layers, title, children, length = 'h-[300svh
     <div ref={rootRef} className={`relative ${length} ${className}`}>
       <div className="sticky top-0 h-[100svh] overflow-hidden bg-ground">
         <Layer name="back" src={layers.back} priority />
+        {layers.clouds && (
+          <div className="cloud-drift absolute -inset-[4%]">
+            <Layer name="clouds" src={layers.clouds} />
+          </div>
+        )}
         <Layer name="middle" src={layers.middle} />
         <div data-parallax-layer="title" className="absolute inset-0 flex items-center justify-center will-change-transform">
           {title}
         </div>
+        {layers.wisps && (
+          <div className="cloud-drift cloud-drift-reverse absolute -inset-[4%]">
+            <Layer name="wisps" src={layers.wisps} />
+          </div>
+        )}
         <Layer name="front" src={layers.front} />
         <div data-parallax-content className="absolute inset-0 z-10 flex flex-col justify-end">
           {children}

@@ -6,7 +6,7 @@
     <!--
       Draws the hero's parallax layers: dusk over the mountains around Bogor (Gunung Salak),
       in the site's palette. Seeded, so every run gives the same picture.
-      window.exportLayers() returns { sky, far, near } as WebP data URLs (far and near keep alpha).
+      window.exportLayers() returns { sky, far, clouds, wisps, near } as WebP data URLs (all but sky keep alpha).
       generate.mjs calls it and writes public/hero-layers/*.webp. Open this file to preview.
     -->
     <style>
@@ -257,12 +257,244 @@
         return c
       }
 
-      const layers = { sky: drawSky(), far: drawFar(), near: drawNear() }
+      // ---------- 3. clouds: soft value-noise fields shaped into banks, lit from the low sun below them
+      function makeNoise(seed) {
+        const r = rng(seed)
+        const p = [...Array(256).keys()]
+        for (let i = 255; i > 0; i--) {
+          const j = Math.floor(r() * (i + 1))
+          ;[p[i], p[j]] = [p[j], p[i]]
+        }
+        const P = new Uint16Array(512)
+        for (let i = 0; i < 512; i++) P[i] = p[i & 255]
+        const V = new Float32Array(256).map(() => r())
+        const fade = (t) => t * t * (3 - 2 * t)
+        const at = (x, y) => V[P[P[x & 255] + (y & 255)]]
+        return (x, y) => {
+          const xi = Math.floor(x)
+          const yi = Math.floor(y)
+          const u = fade(x - xi)
+          const v = fade(y - yi)
+          const a = at(xi, yi)
+          const b = at(xi + 1, yi)
+          const c = at(xi, yi + 1)
+          const d = at(xi + 1, yi + 1)
+          return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v
+        }
+      }
+      const fbm = (noise, x, y, octaves = 5) => {
+        let sum = 0
+        let amp = 0.5
+        let f = 1
+        let norm = 0
+        for (let o = 0; o < octaves; o++) {
+          sum += noise(x * f, y * f) * amp
+          norm += amp
+          amp *= 0.5
+          f *= 2.03
+        }
+        return sum / norm
+      }
+      const smooth = (a, b, x) => {
+        const t = Math.max(0, Math.min(1, (x - a) / (b - a)))
+        return t * t * (3 - 2 * t)
+      }
+      const mix = (c1, c2, t) => c1.map((v, i) => v + (c2[i] - v) * t)
+
+      /**
+       * Clouds, rendered as a real volume: a deck of cloud between 1.2 and 2.2 km up, seen from
+       * the ground through a 75° lens, so it recedes in perspective to the horizon. Each pixel
+       * marches through the deck; at every step it measures how much cloud lies between that point
+       * and the low sun (Beer–Lambert) and how strongly vapour scatters light toward the eye
+       * (Henyey–Greenstein, forward-heavy, so the cloud near the sun glows). Undersides catch the
+       * warm sunset, tops sink into the evening blue. Rendered on the GPU (WebGL) at half size.
+       */
+      function drawClouds() {
+        const w = W / 2
+        const h = H / 2
+        const glc = document.createElement('canvas')
+        glc.width = w
+        glc.height = h
+        const gl = glc.getContext('webgl', { premultipliedAlpha: true, preserveDrawingBuffer: true, alpha: true })
+        const vs = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }'
+        const fs = `
+          precision highp float;
+          uniform vec2 res;
+          uniform vec2 sunPx;
+          uniform float horizon;
+          float hash(vec3 p) {
+            p = fract(p * 0.3183099 + vec3(0.71, 0.113, 0.419));
+            p *= 17.0;
+            return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+          }
+          float noise(vec3 x) {
+            vec3 i = floor(x);
+            vec3 f = fract(x);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(mix(hash(i), hash(i + vec3(1, 0, 0)), f.x), mix(hash(i + vec3(0, 1, 0)), hash(i + vec3(1, 1, 0)), f.x), f.y),
+                       mix(mix(hash(i + vec3(0, 0, 1)), hash(i + vec3(1, 0, 1)), f.x), mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+          }
+          float fbm(vec3 p) {
+            float a = 0.5, s = 0.0;
+            for (int i = 0; i < 5; i++) { s += a * noise(p); p = p * 2.03 + vec3(1.7, 9.2, 3.1); a *= 0.5; }
+            return s;
+          }
+          const float BASE = 1.2;
+          const float TOP = 2.2;
+          float density(vec3 p) {
+            float hgt = (p.y - BASE) / (TOP - BASE);
+            if (hgt < 0.0 || hgt > 1.0) return 0.0;
+            // flat-ish bases, rounded, thinning tops
+            float profile = smoothstep(0.0, 0.12, hgt) * smoothstep(1.0, 0.45, hgt);
+            vec3 q = p * vec3(0.32, 0.9, 0.32) + vec3(3.0, 0.0, 1.0);
+            float shape = fbm(q);
+            // big gaps between the cloud fields, so stars and sky show through
+            float fields = smoothstep(0.38, 0.62, fbm(p * vec3(0.07, 0.0, 0.07) + vec3(11.0, 0.0, 5.0)));
+            float d = (shape * fields - 0.36) * 3.2;
+            // wispy, eroded edges
+            d -= (1.0 - smoothstep(0.0, 0.5, d)) * (fbm(p * 1.6 + vec3(5.0)) - 0.5) * 0.9;
+            return clamp(d, 0.0, 1.0) * profile;
+          }
+          float hg(float c, float g) { float g2 = g * g; return (1.0 - g2) / (12.566 * pow(1.0 + g2 - 2.0 * g * c, 1.5)); }
+          void main() {
+            vec2 px = vec2(gl_FragCoord.x, res.y - gl_FragCoord.y) * (2400.0 / res.x); // full-size picture pixels, y down
+            float focal = 1200.0 / tan(radians(37.5));
+            vec3 dir = normalize(vec3((px.x - 1200.0) / focal, (horizon - px.y) / focal, 1.0));
+            vec3 sun = normalize(vec3((sunPx.x - 1200.0) / focal, (horizon - sunPx.y) / focal, 1.0));
+            if (dir.y < 0.004) { gl_FragColor = vec4(0.0); return; }
+            float t0 = BASE / dir.y;
+            float t1 = min(TOP / dir.y, 90.0);
+            if (t0 > 90.0) { gl_FragColor = vec4(0.0); return; }
+            const int STEPS = 120;
+            float dt = (t1 - t0) / float(STEPS);
+            float cosA = dot(dir, sun);
+            float phase = mix(hg(cosA, -0.15), hg(cosA, 0.75), 0.55);
+            vec3 sunCol = vec3(1.0, 0.52, 0.30) * 9.0;
+            vec3 skyTop = vec3(0.07, 0.10, 0.22);
+            vec3 skyLow = vec3(0.30, 0.16, 0.20);
+            vec3 col = vec3(0.0);
+            float T = 1.0;
+            float jitter = 0.5 + (hash(vec3(px, 1.0)) - 0.5) * 0.35; // a little dither, no visible grain
+            for (int i = 0; i < STEPS; i++) {
+              float t = t0 + (float(i) + jitter) * dt;
+              vec3 p = dir * t;
+              float d = density(p);
+              if (d > 0.002) {
+                // light reaching this point from the sun, through the cloud above/before it
+                float dl = 0.0;
+                for (int j = 1; j <= 6; j++) dl += density(p + sun * (0.07 * float(j * j)));
+                float beer = exp(-dl * 1.6);
+                float powder = 1.0 - exp(-d * 4.0);
+                float hgt = (p.y - BASE) / (TOP - BASE);
+                vec3 ambient = mix(skyLow, skyTop, hgt);
+                vec3 light = sunCol * beer * powder * phase + ambient;
+                float a = 1.0 - exp(-d * dt * 1.9);
+                // far cloud fades into the haze at the horizon
+                a *= exp(-t * 0.018);
+                col += T * a * light;
+                T *= 1.0 - a;
+                if (T < 0.02) break;
+              }
+            }
+            float alpha = 1.0 - T;
+            vec3 c = alpha > 0.001 ? col / alpha : vec3(0.0);
+            c = 1.0 - exp(-c * 1.15); // soft tone curve
+            c = pow(c, vec3(0.85));
+            gl_FragColor = vec4(c * alpha, alpha);
+          }
+        `
+        const compile = (type, src) => {
+          const s = gl.createShader(type)
+          gl.shaderSource(s, src)
+          gl.compileShader(s)
+          if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s))
+          return s
+        }
+        const prog = gl.createProgram()
+        gl.attachShader(prog, compile(gl.VERTEX_SHADER, vs))
+        gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs))
+        gl.linkProgram(prog)
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog))
+        gl.useProgram(prog)
+        const buf = gl.createBuffer()
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
+        const loc = gl.getAttribLocation(prog, 'p')
+        gl.enableVertexAttribArray(loc)
+        gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
+        gl.uniform2f(gl.getUniformLocation(prog, 'res'), w, h)
+        gl.uniform2f(gl.getUniformLocation(prog, 'sunPx'), SUN.x, SUN.y)
+        gl.uniform1f(gl.getUniformLocation(prog, 'horizon'), H * 0.64)
+        gl.viewport(0, 0, w, h)
+        gl.clearColor(0, 0, 0, 0)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+
+        const c = canvas()
+        const ctx = c.getContext('2d')
+        ctx.imageSmoothingQuality = 'high'
+        ctx.drawImage(glc, 0, 0, W, H)
+        return c
+      }
+
+      // a low, thin band of mist in front of the far range: the camera passes through it on scroll
+      function drawWisps() {
+        const c = canvas()
+        const ctx = c.getContext('2d')
+        const L = 2
+        const w = W / L
+        const h = H / L
+        const noise = makeNoise(123)
+        const out = new ImageData(w, h)
+        for (let j = 0; j < h; j++) {
+          const y = j * L
+          const band = Math.exp(-Math.pow((y - H * 0.765) / (H * 0.035), 2))
+          if (band < 0.01) continue
+          for (let i = 0; i < w; i++) {
+            const x = i * L
+            const n = fbm(noise, x / 520, y / 70, 5)
+            const d = smooth(0.42, 0.75, n) * band
+            if (d <= 0.002) continue
+            const near = Math.exp(-Math.abs(x - SUN.x) / (W * 0.3))
+            const col = mix([150, 140, 170], [244, 168, 132], near * 0.8)
+            const k = (j * w + i) * 4
+            out.data[k] = col[0]
+            out.data[k + 1] = col[1]
+            out.data[k + 2] = col[2]
+            out.data[k + 3] = d * 150
+          }
+        }
+        const small = document.createElement('canvas')
+        small.width = w
+        small.height = h
+        small.getContext('2d').putImageData(out, 0, 0)
+        ctx.imageSmoothingQuality = 'high'
+        ctx.drawImage(small, 0, 0, W, H)
+        return c
+      }
+
+      const layers = { sky: drawSky(), clouds: drawClouds(), far: drawFar(), wisps: drawWisps(), near: drawNear() }
       const preview = document.getElementById('preview')
       Object.values(layers).forEach((c) => preview.appendChild(c))
 
+      // half-size layers keep the same 3:2 frame, so they line up the same; it keeps the files small
+      const half = (c) => {
+        const h = document.createElement('canvas')
+        h.width = W / 2
+        h.height = H / 2
+        const ctx = h.getContext('2d')
+        ctx.imageSmoothingQuality = 'high'
+        ctx.drawImage(c, 0, 0, W / 2, H / 2)
+        return h
+      }
       window.exportLayers = () =>
-        Object.fromEntries(Object.entries(layers).map(([k, c]) => [k, c.toDataURL('image/webp', k === 'sky' ? 0.82 : 0.86)]))
+        Object.fromEntries(
+          Object.entries(layers).map(([k, c]) => {
+            // clouds are rendered at half size anyway, and the mist is soft: both save at half size
+            if (k === 'wisps' || k === 'clouds') return [k, half(c).toDataURL('image/webp', 0.8)]
+            return [k, c.toDataURL('image/webp', k === 'sky' ? 0.82 : 0.86)]
+          }),
+        )
     </script>
   </body>
 </html>

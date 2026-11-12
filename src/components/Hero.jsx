@@ -12,11 +12,14 @@ const ease = [0.22, 1, 0.36, 1]
 // Dusk over the mountains around Bogor, drawn by tools/hero-layers (far to near)
 const LAYERS = {
   back: '/hero-layers/sky.webp',
+  clouds: '/hero-layers/clouds.webp', // a sunset cloud deck behind the mountains, rendered as a volume
   middle: '/hero-layers/far.webp',
+  wisps: '/hero-layers/wisps.webp', // low mist at the foot of the mountains
   front: '/hero-layers/near.webp',
 }
 
-export default function Hero() {
+/** `ready`: false while the loading screen is up, so the entrance plays as the curtain lifts. */
+export default function Hero({ ready = true }) {
   const lenis = useLenisInstance()
   const { t } = useLang()
 
@@ -27,7 +30,7 @@ export default function Hero() {
 
   const rise = (delay, y = 24) => ({
     initial: { opacity: 0, y },
-    animate: { opacity: 1, y: 0 },
+    animate: ready ? { opacity: 1, y: 0 } : { opacity: 0, y },
     transition: { duration: 0.9, ease, delay },
   })
 
@@ -46,6 +49,7 @@ export default function Hero() {
               as="span"
               decorative
               onLoad
+              hold={!ready}
               text={profile.short}
               accent="."
               delay={0.2}

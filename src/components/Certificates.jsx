@@ -154,7 +154,7 @@ export default function Certificates() {
     <section id="certificates" ref={sectionRef} className="relative overflow-hidden">
       <div aria-hidden="true" className="glow -left-56 top-[20%] h-[640px] w-[440px] opacity-70 max-md:hidden" />
 
-      <div className="relative mx-auto max-w-[1320px] px-6 pb-24 md:px-10 md:pb-40">
+      <div className="relative mx-auto max-w-[1320px] px-6 pb-10 md:px-10 md:pt-32 md:pb-16">
         <RevealText
           text={t('certs.title')}
           accent="."

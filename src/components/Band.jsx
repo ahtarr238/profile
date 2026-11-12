@@ -21,6 +21,10 @@ export default function Band() {
   const dir = useRef(1)
   const pace = useSpring(1, { damping: 30, stiffness: 120 })
   const x = useTransform(base, (v) => `${wrap(-50, 0, v)}%`)
+  // the strip comes in steeper with the rising sheet and settles to its tilt by the time it's mid-screen
+  const { scrollYProgress: rise } = useScroll({ target: sectionRef, offset: ['start end', 'center center'] })
+  const tilt = useTransform(rise, [0, 1], [-9, -4])
+  const show = useTransform(rise, [0, 0.6], [0, 1]) // surfaces out of the dark instead of cutting across the hero
 
   useAnimationFrame((_, delta) => {
     if (!onScreen) return
@@ -46,16 +50,17 @@ export default function Band() {
 
   return (
     <section ref={sectionRef} aria-label="What I do" className="relative h-[180px] overflow-hidden md:h-[240px]">
-      <div
+      <motion.div
+        style={{ rotate: tilt, opacity: show }}
         onMouseEnter={() => pace.set(0)}
         onMouseLeave={() => pace.set(1)}
-        className="absolute top-1/2 -left-[5%] w-[110%] -translate-y-1/2 -rotate-[4deg] border-y-2 border-sky-soft/80 bg-ground py-3 text-sky-soft md:py-4"
+        className="absolute top-1/2 -left-[5%] w-[110%] -translate-y-1/2 border-y-2 border-sky-soft/80 bg-ground py-3 text-sky-soft md:py-4"
       >
         <motion.div style={{ x }} className="flex w-max will-change-transform">
           {words('a')}
           {words('b')}
         </motion.div>
-      </div>
+      </motion.div>
     </section>
   )
 }
