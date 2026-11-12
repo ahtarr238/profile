@@ -257,10 +257,11 @@ function ProjectDetail({ index, fromRect, slideRect, onIndex, onClosed }) {
         animate={{ opacity: closing ? 0 : 1 }}
         transition={{ duration: closing ? 0.45 : 0.4, ease }}
       />
+      {/* One screen, no scrolling: video and words side by side on wide screens, stacked on narrow ones.
+          The video's width comes from the height left for it, so the whole panel always fits. */}
       <div data-lenis-prevent className="relative h-full overflow-y-auto overscroll-contain">
-        <div className="mx-auto max-w-[1100px] px-5 pt-20 pb-16 md:px-10 md:pt-24">
-          {/* the video, a little smaller than on the stage so the words have room */}
-          <div className="mx-auto" style={{ maxWidth: 'min(100%, calc(56svh * 16 / 9 + 24px))' }}>
+        <div className="mx-auto flex min-h-full w-full max-w-[1280px] flex-col justify-center gap-4 px-4 pt-14 pb-2 sm:gap-5 sm:pb-4 sm:px-6 sm:pt-16 min-[1600px]:max-w-[1500px] lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:items-center lg:gap-14 lg:px-10 lg:py-16">
+          <div className="mx-auto w-full max-w-[min(100%,calc(36svh_*_16_/_9_+_12px))] [@media(max-height:680px)]:max-w-[min(100%,calc(26svh_*_16_/_9_+_12px))] sm:max-w-[min(100%,calc(42svh_*_16_/_9_+_24px))] lg:max-w-[min(100%,calc((100svh_-_160px)_*_16_/_9_+_24px))]">
             <div key={project.id}>
               <ProjectVideo project={project} mediaRef={mediaRef} curtain={false} />
             </div>
@@ -271,40 +272,36 @@ function ProjectDetail({ index, fromRect, slideRect, onIndex, onClosed }) {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: closing ? 0 : 1, y: closing ? 10 : 0 }}
             transition={{ duration: closing ? 0.2 : 0.6, ease, delay: closing ? 0 : 0.3 }}
-            className="mx-auto mt-10 grid max-w-[880px] gap-8 md:mt-14 md:grid-cols-[1fr_220px] md:gap-14"
+            className="mx-auto w-full max-w-[640px] lg:max-w-none"
           >
-            <div>
-              <div className="flex items-center gap-3">
-                <span className="font-display text-[15px] text-coral tabular-nums">
-                  {num(index)} <span className="text-dim">/ {num(projects.length - 1)}</span>
+            <div className="flex items-center gap-3">
+              <span className="font-display text-[14px] text-coral tabular-nums">
+                {num(index)} <span className="text-dim">/ {num(projects.length - 1)}</span>
+              </span>
+              <RoleBadge role={project.role} />
+            </div>
+            <h2 className="font-display mt-1.5 text-[28px] leading-[1.05] font-normal tracking-[-0.03em] text-sky-soft sm:text-[36px] lg:text-[46px]">{title}</h2>
+            <p className="mt-3 text-[14px] leading-6 text-mist sm:text-[15px] sm:leading-7 lg:mt-5 lg:text-[16px]">{pick(project, 'description')}</p>
+            <ul className="mt-3 flex flex-wrap gap-2 sm:mt-4 lg:mt-6">
+              {pick(project, 'tags').map((tag) => (
+                <li key={tag}>
+                  <Tag>{tag}</Tag>
+                </li>
+              ))}
+            </ul>
+            {projects.length > 1 && (
+              <button
+                type="button"
+                onClick={() => onIndex(next)}
+                className="group/next mt-4 flex w-full items-center justify-between gap-3 border-t border-sky-soft/15 pt-4 text-left text-[14px] text-mist transition-colors duration-150 hover:text-sky-soft sm:mt-5 lg:mt-8"
+              >
+                <span className="min-w-0">
+                  <span className="block text-[12px] text-dim">{t('projects.next')}</span>
+                  <span className="mt-0.5 block truncate text-sky-soft">{pick(projects[next], 'title')}</span>
                 </span>
-                <RoleBadge role={project.role} />
-              </div>
-              <h2 className="font-display mt-3 text-[40px] leading-[1] font-normal tracking-[-0.04em] text-sky-soft md:text-[64px]">{title}</h2>
-              <p className="mt-6 text-[17px] leading-8 text-mist">{pick(project, 'description')}</p>
-            </div>
-            <div className="grid content-start gap-6 md:pt-12">
-              <ul className="flex flex-wrap gap-2">
-                {pick(project, 'tags').map((tag) => (
-                  <li key={tag}>
-                    <Tag>{tag}</Tag>
-                  </li>
-                ))}
-              </ul>
-              {projects.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => onIndex(next)}
-                  className="group/next flex items-center justify-between gap-3 border-t border-sky-soft/15 pt-4 text-left text-[14px] text-mist transition-colors duration-150 hover:text-sky-soft"
-                >
-                  <span>
-                    <span className="block text-[12px] text-dim">{t('projects.next')}</span>
-                    <span className="mt-1 block text-sky-soft">{pick(projects[next], 'title')}</span>
-                  </span>
-                  <ArrowRight size={18} strokeWidth={1.75} aria-hidden="true" className="shrink-0 transition-transform duration-200 ease-out group-hover/next:translate-x-1" />
-                </button>
-              )}
-            </div>
+                <ArrowRight size={18} strokeWidth={1.75} aria-hidden="true" className="shrink-0 transition-transform duration-200 ease-out group-hover/next:translate-x-1" />
+              </button>
+            )}
           </motion.div>
         </div>
       </div>
@@ -317,7 +314,7 @@ function ProjectDetail({ index, fromRect, slideRect, onIndex, onClosed }) {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: closing ? 0 : 1, scale: closing ? 0.8 : 1 }}
         transition={{ duration: 0.35, ease, delay: closing ? 0 : 0.2 }}
-        className="absolute top-4 right-4 z-10 grid size-12 place-items-center rounded-full border border-sky-soft/25 bg-navy-raised text-sky-soft transition-colors duration-150 hover:border-coral hover:text-coral md:top-6 md:right-6"
+        className="absolute top-3 right-3 z-10 grid size-11 place-items-center rounded-full border border-sky-soft/25 bg-navy-raised text-sky-soft transition-colors duration-150 hover:border-coral hover:text-coral md:top-6 md:right-6 md:size-12"
       >
         <X size={20} strokeWidth={1.75} aria-hidden="true" />
       </motion.button>
