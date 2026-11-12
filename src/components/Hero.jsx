@@ -16,6 +16,13 @@ const LAYERS = {
   middle: '/hero-layers/far.webp',
   wisps: '/hero-layers/wisps.webp', // low mist at the foot of the mountains
   front: '/hero-layers/near.webp',
+  // phones: smaller files and the clouds baked into the sky, so four layers move instead of five
+  mobile: {
+    back: '/hero-layers/sky-m.webp',
+    middle: '/hero-layers/far-m.webp',
+    wisps: '/hero-layers/wisps.webp',
+    front: '/hero-layers/near-m.webp',
+  },
 }
 
 /** `ready`: false while the loading screen is up, so the entrance plays as the curtain lifts. */

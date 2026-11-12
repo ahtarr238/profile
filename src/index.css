@@ -116,5 +116,12 @@ html.lenis body {
   animation-duration: 48s;
   animation-direction: alternate-reverse;
 }
+/* phones: no endless drift (the mist still moves with the scroll); less for the phone to redraw */
+@media (max-width: 767px) {
+  .cloud-drift {
+    animation: none;
+    will-change: auto;
+  }
+}
 
 

@@ -6,7 +6,8 @@
     <!--
       Draws the hero's parallax layers: dusk over the mountains around Bogor (Gunung Salak),
       in the site's palette. Seeded, so every run gives the same picture.
-      window.exportLayers() returns { sky, far, clouds, wisps, near } as WebP data URLs (all but sky keep alpha).
+      window.exportLayers() returns { sky, far, clouds, wisps, near } as WebP data URLs (all but sky keep alpha),
+      plus lighter phone copies: sky-m (sky with the clouds baked in), far-m and near-m.
       generate.mjs calls it and writes public/hero-layers/*.webp. Open this file to preview.
     -->
     <style>
@@ -487,14 +488,35 @@
         ctx.drawImage(c, 0, 0, W / 2, H / 2)
         return h
       }
-      window.exportLayers = () =>
-        Object.fromEntries(
+      // phones get lighter copies: smaller files, and the clouds baked into the sky (one layer fewer to move)
+      const scaled = (c, w) => {
+        const out = document.createElement('canvas')
+        out.width = w
+        out.height = Math.round((w * H) / W)
+        const ctx = out.getContext('2d')
+        ctx.imageSmoothingQuality = 'high'
+        ctx.drawImage(c, 0, 0, out.width, out.height)
+        return out
+      }
+      const skyWithClouds = () => {
+        const c = canvas()
+        const ctx = c.getContext('2d')
+        ctx.drawImage(layers.sky, 0, 0)
+        ctx.drawImage(layers.clouds, 0, 0)
+        return c
+      }
+      window.exportLayers = () => ({
+        ...Object.fromEntries(
           Object.entries(layers).map(([k, c]) => {
             // clouds are rendered at half size anyway, and the mist is soft: both save at half size
             if (k === 'wisps' || k === 'clouds') return [k, half(c).toDataURL('image/webp', 0.8)]
             return [k, c.toDataURL('image/webp', k === 'sky' ? 0.82 : 0.86)]
           }),
-        )
+        ),
+        'sky-m': scaled(skyWithClouds(), 1200).toDataURL('image/webp', 0.82),
+        'far-m': scaled(layers.far, 1600).toDataURL('image/webp', 0.86),
+        'near-m': scaled(layers.near, 1600).toDataURL('image/webp', 0.86),
+      })
     </script>
   </body>
 </html>

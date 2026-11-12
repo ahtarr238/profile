@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, animate, motion, useMotionValue, useMotionValueEvent, useTransform } from 'motion/react'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useLenisInstance } from '../hooks/useLenis'
 import { useLang } from '../i18n/context'
 import { band } from '../data/content'
@@ -65,6 +66,8 @@ export default function Loader({ onReveal, onGone }) {
     return () => {
       lenis?.start()
       document.documentElement.style.overflow = ''
+      // fonts and pictures came in while this was up; let the hero's scroll effects measure the page afresh
+      requestAnimationFrame(() => ScrollTrigger.refresh())
     }
   }, [lenis])
 
