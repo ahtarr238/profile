@@ -13,8 +13,9 @@ const ids = nav.map((n) => n.id)
 function useActiveSection() {
   const [active, setActive] = useState(null)
   useEffect(() => {
-    const els = ids.map((id) => document.getElementById(id)).filter(Boolean)
     const onScroll = () => {
+      // looked up each time: the sections below the hero mount a moment after the page does
+      const els = ids.map((id) => document.getElementById(id)).filter(Boolean)
       const line = window.innerHeight * 0.4
       let current = null
       for (const el of els) if (el.getBoundingClientRect().top <= line) current = el.id

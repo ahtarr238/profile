@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { AnimatePresence, animate, motion, useMotionValue, useMotionValueEvent, useTransform } from 'motion/react'
+import { AnimatePresence, animate, motion, useMotionValue, useTransform } from 'motion/react'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useLenisInstance } from '../hooks/useLenis'
 import { useLang } from '../i18n/context'
@@ -24,17 +24,21 @@ const RIDGE = (() => {
   return `M${pts.join(' L')}`
 })()
 
-/** One digit of the counter, rolling like a meter. */
-function Digit({ value }) {
+/**
+ * One digit of the counter, rolling like a meter. It follows the progress value directly
+ * (hundreds, tens or ones by `place`), so the counter never re-renders the loader.
+ */
+function Digit({ progress, place }) {
+  const y = useTransform(progress, (v) => `-${Math.floor(Math.round(v * 100) / place) % 10}em`)
   return (
     <span className="relative inline-block h-[1em] w-[0.62em] overflow-hidden">
-      <span className="absolute inset-x-0 top-0 flex flex-col transition-transform duration-500 ease-out" style={{ transform: `translateY(-${value}em)` }}>
+      <motion.span className="absolute inset-x-0 top-0 flex flex-col transition-transform duration-500 ease-out" style={{ y }}>
         {Array.from({ length: 10 }, (_, d) => (
           <span key={d} className="block h-[1em] leading-none">
             {d}
           </span>
         ))}
-      </span>
+      </motion.span>
     </span>
   )
 }
@@ -50,12 +54,10 @@ export default function Loader({ onReveal, onGone }) {
   const lenis = useLenisInstance()
   const { t } = useLang()
   const progress = useMotionValue(0) // what is shown, 0…1
-  const [count, setCount] = useState(0)
   const [word, setWord] = useState(0)
   const [leaving, setLeaving] = useState(false)
   const target = useRef(0)
   const gone = useRef(false)
-  useMotionValueEvent(progress, 'change', (v) => setCount(Math.round(v * 100)))
   const sunY = useTransform(progress, [0, 1], [118, 40]) // rises from behind the ridge
   const glow = useTransform(progress, [0, 1], [0.3, 1])
 
@@ -126,7 +128,6 @@ export default function Loader({ onReveal, onGone }) {
   }, [progress, onReveal, onGone])
 
   const letters = [...'ahtar']
-  const digits = String(count).padStart(3, '0').split('').map(Number)
   const finish = () => {
     if (gone.current) return
     gone.current = true
@@ -236,8 +237,8 @@ export default function Loader({ onReveal, onGone }) {
           <div className="flex items-end justify-between">
             <span className="text-[13px] text-mist">{t('loading')}</span>
             <span className="font-display flex text-[44px] leading-none font-light text-sky-soft tabular-nums md:text-[64px]">
-              {digits.map((d, i) => (
-                <Digit key={i} value={d} />
+              {[100, 10, 1].map((place) => (
+                <Digit key={place} progress={progress} place={place} />
               ))}
               <span className="ml-1 text-[0.4em] leading-[2.2] text-coral">%</span>
             </span>
