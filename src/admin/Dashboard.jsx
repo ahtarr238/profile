@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, ExternalLink, Eye, EyeOff, LogOut, Pencil, Plus, RotateCcw, Trash2, UploadCloud, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { ArrowDown, ArrowUp, Award, ChartColumn, Clapperboard, ExternalLink, Eye, EyeOff, LogOut, Pencil, Plus, RotateCcw, Trash2, UploadCloud, X } from 'lucide-react'
 import { GitHub, UPLOADS_DIR, uploadRepoPath } from './github'
 import { checkVideo, imageToWebp, MAX_VIDEO_MB, pdfToWebp, videoPoster } from './media'
-import { Brand, Btn, Field, Notice, Shell } from './ui'
+import { Brand, Btn, Field, Notice } from './ui'
 import { friendly } from './errors'
 import StatsPanel from './StatsPanel'
 import { SessionClock, SessionWarning } from './SessionClock'
@@ -412,132 +413,233 @@ export default function Dashboard({ session, onSignOut }) {
   }
 
   const taken = useMemo(() => new Set((draft?.[tab] || []).map((r) => r.id)), [draft, tab])
+  const counts = { projects: draft?.projects?.length, certificates: draft?.certificates?.length }
+  const tabs = [
+    { key: 'visitors', label: 'Visitors', icon: ChartColumn },
+    { key: 'projects', label: 'Projects', icon: Clapperboard },
+    { key: 'certificates', label: 'Certificates', icon: Award },
+  ]
+  const current = tabs.find((x) => x.key === tab)
 
   return (
-    <Shell wide>
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <Brand />
-        <div className="flex items-center gap-2">
-          <a href="/" target="_blank" rel="noreferrer" className="inline-flex h-11 items-center gap-2 px-3 text-[14px] text-mist hover:text-sky-soft">
-            View site <ExternalLink size={15} strokeWidth={1.75} aria-hidden="true" />
-          </a>
-          <Btn kind="ghost" onClick={onSignOut}>
-            <LogOut size={16} strokeWidth={1.75} aria-hidden="true" /> Sign out
-          </Btn>
+    <div className="min-h-svh bg-ground text-sky-soft md:grid md:grid-cols-[240px_minmax(0,1fr)]">
+      {/* desktop: a quiet sidebar with the sections and the account */}
+      <aside className="sticky top-0 hidden h-svh flex-col border-r border-sky-soft/10 bg-navy-deep/40 px-4 py-6 md:flex">
+        <div className="px-2">
+          <Brand />
         </div>
-      </header>
-      <p className="mt-2 flex flex-wrap items-center gap-x-2 text-[13px] text-dim">
-        Signed in as {session.login} · saves to {session.repo} · <SessionClock left={timeLeft} />
-      </p>
-      <SessionWarning left={timeLeft} dirty={dirty} />
-
-      {/* unsaved changes bar */}
-      <div
-        className={`sticky top-0 z-40 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[6px] px-4 py-3 ${
-          dirty ? 'bg-coral/15' : 'bg-tile'
-        }`}
-      >
-        <p className="text-[14px]">{dirty ? `${log.length} unpublished change${log.length === 1 ? '' : 's'}` : 'Everything is published.'}</p>
-        <div className="flex gap-2">
-          {dirty && (
-            <Btn kind="plain" onClick={discard} disabled={publishing}>
-              <RotateCcw size={15} strokeWidth={1.75} aria-hidden="true" /> Discard
-            </Btn>
-          )}
-          <Btn onClick={publish} disabled={!dirty || publishing}>
-            <UploadCloud size={16} strokeWidth={1.75} aria-hidden="true" /> {publishing ? 'Publishing…' : 'Publish'}
-          </Btn>
-        </div>
-      </div>
-      {status && (
-        <div className="mt-3">
-          <Notice tone={status.tone}>{status.text}</Notice>
-        </div>
-      )}
-
-      <div className="mt-8 flex flex-wrap items-end justify-between gap-4 border-b border-sky-soft/15">
-        <div className="flex gap-6" role="tablist">
-          {[['visitors', 'Visitors'], ...Object.entries(KINDS).map(([key, kind]) => [key, kind.label])].map(([key, label]) => (
+        <nav className="mt-10 grid gap-1" aria-label="Sections">
+          {tabs.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               type="button"
-              role="tab"
-              aria-selected={tab === key}
+              aria-current={tab === key ? 'page' : undefined}
               onClick={() => setTab(key)}
-              className={`-mb-px border-b-2 pb-3 font-display text-[22px] transition-colors duration-150 md:text-[28px] ${
-                tab === key ? 'border-coral text-sky-soft' : 'border-transparent text-dim hover:text-mist'
+              className={`flex h-11 items-center gap-3 rounded-[6px] px-3 text-[14px] transition-colors duration-150 ${
+                tab === key ? 'bg-navy-raised text-sky-soft' : 'text-mist hover:bg-sky-soft/5 hover:text-sky-soft'
               }`}
             >
+              <Icon size={17} strokeWidth={1.75} className={tab === key ? 'text-coral' : ''} aria-hidden="true" />
               {label}
+              {counts[key] != null && <span className="ml-auto text-[12px] text-dim tabular-nums">{counts[key]}</span>}
             </button>
           ))}
+        </nav>
+
+        <div className="mt-auto grid gap-3 border-t border-sky-soft/10 px-2 pt-5 text-[13px]">
+          <div className="min-w-0">
+            <p className="truncate text-sky-soft">{session.login}</p>
+            <p className="truncate text-[12px] text-dim">{session.repo}</p>
+          </div>
+          <p className="text-mist">
+            <SessionClock left={timeLeft} /> <span className="text-dim">left</span>
+          </p>
+          <div className="-mx-2 grid gap-1">
+            <a href="/" target="_blank" rel="noreferrer" className="flex h-10 items-center gap-2.5 rounded-[6px] px-2 text-mist hover:bg-sky-soft/5 hover:text-sky-soft">
+              <ExternalLink size={15} strokeWidth={1.75} aria-hidden="true" /> View site
+            </a>
+            <button type="button" onClick={onSignOut} className="flex h-10 items-center gap-2.5 rounded-[6px] px-2 text-mist hover:bg-sky-soft/5 hover:text-coral">
+              <LogOut size={15} strokeWidth={1.75} aria-hidden="true" /> Sign out
+            </button>
+          </div>
         </div>
-        {k && (
-          <Btn onClick={() => setEditing(k.blank())} className="mb-3" disabled={!draft}>
-            <Plus size={16} strokeWidth={2} aria-hidden="true" /> Add {k.one}
-          </Btn>
+      </aside>
+
+      {/* phones: a slim bar on top and the three sections as a switch under it */}
+      <header className="sticky top-0 z-40 border-b border-sky-soft/10 bg-ground px-4 pt-3 pb-3 md:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <Brand />
+          <div className="flex items-center gap-1 text-[13px] text-mist">
+            <SessionClock left={timeLeft} />
+            <a href="/" target="_blank" rel="noreferrer" aria-label="View site" className="grid size-10 place-items-center rounded-[6px] hover:text-sky-soft">
+              <ExternalLink size={17} strokeWidth={1.75} aria-hidden="true" />
+            </a>
+            <button type="button" onClick={onSignOut} aria-label="Sign out" className="-mr-2 grid size-10 place-items-center rounded-[6px] hover:text-coral">
+              <LogOut size={17} strokeWidth={1.75} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+        <nav className="mt-3 grid grid-cols-3 gap-1 rounded-[8px] bg-tile p-1" aria-label="Sections">
+          {tabs.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              aria-current={tab === key ? 'page' : undefined}
+              onClick={() => setTab(key)}
+              className={`flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-[6px] px-1 text-[13px] transition-colors duration-150 ${
+                tab === key ? 'bg-navy-raised text-sky-soft' : 'text-mist'
+              }`}
+            >
+              <Icon size={15} strokeWidth={1.75} className={`shrink-0 ${tab === key ? 'text-coral' : ''}`} aria-hidden="true" />
+              <span className="truncate">{label}</span>
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      <main className={`mx-auto w-full max-w-[1180px] min-w-0 px-4 pt-6 md:px-10 md:pt-10 ${dirty ? 'pb-32' : 'pb-16'}`}>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-[34px] leading-none tracking-[-0.03em] md:text-[44px]">{current.label}</h1>
+            <p className="mt-2 text-[14px] text-mist">
+              {tab === 'visitors'
+                ? 'Who came by, from where, and what they did.'
+                : `${counts[tab] ?? 0} in total. Changes stay here until you publish them.`}
+            </p>
+          </div>
+          {k && (
+            <Btn onClick={() => setEditing(k.blank())} disabled={!draft} className="max-sm:w-full">
+              <Plus size={16} strokeWidth={2} aria-hidden="true" /> Add {k.one}
+            </Btn>
+          )}
+        </div>
+
+        <SessionWarning left={timeLeft} dirty={dirty} />
+        {status && (
+          <div className="mt-5">
+            <Notice tone={status.tone}>{status.text}</Notice>
+          </div>
         )}
-      </div>
 
-      {tab === 'visitors' && <StatsPanel token={session.token} />}
-      {k && draft && rows.length === 0 && <p className="mt-8 text-mist">Nothing here yet. Add the first {k.one}.</p>}
-      <ul className="mt-2 divide-y divide-sky-soft/10">
-        {rows.map((r, i) => (
-          <li key={r.id} className="flex flex-wrap items-center gap-4 py-4">
-            <div className="h-16 w-24 shrink-0 overflow-hidden rounded-[4px] bg-tile">
-              {k.thumb(r) && <img src={previewOf(k.thumb(r))} alt="" className="size-full object-cover" loading="lazy" />}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-2 truncate text-[16px]">
-                {r.title}
-                {!r.published && <span className="rounded-[3px] bg-sky-soft/10 px-1.5 py-0.5 text-[11px] text-mist">Hidden</span>}
-              </p>
-              <p className="truncate text-[13px] text-dim">{k.meta(r)}</p>
-            </div>
-            <div className="flex items-center gap-1">
-              {tab === 'projects' && (
-                <>
-                  <Btn kind="plain" className="px-2" aria-label="Move up" disabled={i === 0} onClick={() => move(i, -1)}>
-                    <ArrowUp size={16} strokeWidth={1.75} aria-hidden="true" />
-                  </Btn>
-                  <Btn kind="plain" className="px-2" aria-label="Move down" disabled={i === rows.length - 1} onClick={() => move(i, 1)}>
-                    <ArrowDown size={16} strokeWidth={1.75} aria-hidden="true" />
-                  </Btn>
-                </>
-              )}
-              <Btn kind="plain" className="px-2" aria-label={r.published ? 'Hide from site' : 'Show on site'} onClick={() => togglePublished(r)}>
-                {r.published ? <Eye size={16} strokeWidth={1.75} aria-hidden="true" /> : <EyeOff size={16} strokeWidth={1.75} aria-hidden="true" />}
-              </Btn>
-              <Btn kind="plain" className="px-2" aria-label={`Edit ${r.title}`} onClick={() => setEditing(r)}>
-                <Pencil size={16} strokeWidth={1.75} aria-hidden="true" />
-              </Btn>
-              {confirm === r.id ? (
-                <span className="flex items-center gap-2 pl-2 text-[13px]">
-                  Delete?
-                  <Btn kind="danger" className="h-9 px-3" onClick={() => remove(r)}>
-                    Yes
-                  </Btn>
-                  <Btn kind="plain" className="h-9 px-2" onClick={() => setConfirm(null)}>
-                    No
-                  </Btn>
-                </span>
-              ) : (
-                <Btn kind="plain" className="px-2 hover:text-coral" aria-label={`Delete ${r.title}`} onClick={() => setConfirm(r.id)}>
-                  <Trash2 size={16} strokeWidth={1.75} aria-hidden="true" />
-                </Btn>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
+        <div className="mt-6 md:mt-8">
+          {tab === 'visitors' && <StatsPanel token={session.token} />}
+          {k && draft && rows.length === 0 && (
+            <p className="rounded-[10px] border border-dashed border-sky-soft/15 px-5 py-12 text-center text-mist">Nothing here yet. Add the first {k.one}.</p>
+          )}
+          {k && rows.length > 0 && (
+            <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {rows.map((r, i) => (
+                <li key={r.id} className="flex min-w-0 flex-col overflow-hidden rounded-[10px] border border-sky-soft/10 bg-tile">
+                  <div className={`relative aspect-video ${tab === 'certificates' ? 'bg-white' : 'bg-navy-deep'}`}>
+                    {k.thumb(r) && (
+                      <img
+                        src={previewOf(k.thumb(r))}
+                        alt=""
+                        loading="lazy"
+                        className={`size-full ${tab === 'certificates' ? 'object-contain p-2' : 'object-cover'} ${r.published ? '' : 'opacity-40'}`}
+                      />
+                    )}
+                    <div className="absolute top-2 left-2 flex gap-1.5">
+                      {tab === 'projects' && (
+                        <span className="rounded-[4px] bg-ground/85 px-2 py-1 text-[12px] text-sky-soft tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+                      )}
+                      {!r.published && <span className="rounded-[4px] bg-ground/85 px-2 py-1 text-[12px] text-mist">Hidden</span>}
+                    </div>
+                  </div>
 
-      <p className="mt-10 text-[12px] text-dim">
-        Uploaded files go to <code>{UPLOADS_DIR}/</code> in the repo. Every publish is a commit, so any change can be undone from GitHub’s history.
-      </p>
+                  <div className="flex flex-1 flex-col p-4">
+                    <p className="line-clamp-2 text-[15px] leading-snug text-sky-soft">{r.title}</p>
+                    <p className="mt-1 truncate text-[13px] text-dim">{k.meta(r) || '—'}</p>
+                  </div>
+
+                  <div className="flex h-12 items-center gap-0.5 border-t border-sky-soft/10 px-1.5">
+                    {confirm === r.id ? (
+                      <div className="flex w-full items-center justify-between gap-2 pl-2 text-[13px]">
+                        <span className="truncate text-coral">Delete this {k.one}?</span>
+                        <span className="flex shrink-0 gap-1">
+                          <Btn kind="plain" className="h-9 px-3" onClick={() => setConfirm(null)}>
+                            Keep
+                          </Btn>
+                          <Btn kind="danger" className="h-9 px-3" onClick={() => remove(r)}>
+                            Delete
+                          </Btn>
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        {tab === 'projects' && (
+                          <>
+                            <IconBtn label="Move up" disabled={i === 0} onClick={() => move(i, -1)} icon={ArrowUp} />
+                            <IconBtn label="Move down" disabled={i === rows.length - 1} onClick={() => move(i, 1)} icon={ArrowDown} />
+                          </>
+                        )}
+                        <span className="flex-1" />
+                        <IconBtn label={r.published ? 'Hide from site' : 'Show on site'} onClick={() => togglePublished(r)} icon={r.published ? Eye : EyeOff} />
+                        <IconBtn label={`Edit ${r.title}`} onClick={() => setEditing(r)} icon={Pencil} />
+                        <IconBtn label={`Delete ${r.title}`} onClick={() => setConfirm(r.id)} icon={Trash2} danger />
+                      </>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {k && (
+            <p className="mt-10 text-[12px] text-dim">
+              Uploaded files go to <code>{UPLOADS_DIR}/</code> in the repo. Every publish is a commit, so any change can be undone from GitHub’s history.
+            </p>
+          )}
+        </div>
+      </main>
+
+      {/* unpublished changes: a bar that rises from the bottom and stays until you publish or discard */}
+      <AnimatePresence>
+        {dirty && (
+          <motion.div
+            initial={{ y: 24, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 24, opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-[640px] items-center justify-between gap-3 rounded-[10px] border border-coral/40 bg-navy-deep py-2 pr-2 pl-4 shadow-[0_18px_48px_rgb(0_0_0/0.5)] md:left-[264px]"
+          >
+            <p className="flex min-w-0 items-center gap-2.5 text-[14px]">
+              <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-coral" />
+              <span className="truncate">
+                {log.length} <span className="max-sm:hidden">unpublished </span>change{log.length === 1 ? '' : 's'}
+              </span>
+            </p>
+            <div className="flex shrink-0 gap-1.5">
+              <Btn kind="plain" onClick={discard} disabled={publishing} className="px-3" aria-label="Discard changes">
+                <RotateCcw size={15} strokeWidth={1.75} aria-hidden="true" /> <span className="max-sm:hidden">Discard</span>
+              </Btn>
+              <Btn onClick={publish} disabled={publishing}>
+                <UploadCloud size={16} strokeWidth={1.75} aria-hidden="true" /> {publishing ? 'Publishing…' : 'Publish'}
+              </Btn>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {editing && (
         <Editor kind={tab} row={editing} taken={taken} previewOf={previewOf} onClose={() => setEditing(null)} onDone={onEdited} />
       )}
-    </Shell>
+    </div>
+  )
+}
+
+function IconBtn({ label, icon: Icon, danger = false, ...props }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      className={`grid size-10 place-items-center rounded-[6px] text-mist transition-colors duration-150 hover:bg-sky-soft/5 disabled:pointer-events-none disabled:opacity-30 ${
+        danger ? 'hover:text-coral' : 'hover:text-sky-soft'
+      }`}
+      {...props}
+    >
+      <Icon size={16} strokeWidth={1.75} aria-hidden="true" />
+    </button>
   )
 }
