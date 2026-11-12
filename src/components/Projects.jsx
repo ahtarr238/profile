@@ -7,6 +7,7 @@ import RevealText from './RevealText'
 import { trackEvent } from '../lib/track'
 import { useLang } from '../i18n/context'
 import { useLenisInstance } from '../hooks/useLenis'
+import { useMedia } from '../hooks/useMedia'
 
 const ease = [0.22, 1, 0.36, 1]
 const num = (i) => String(i + 1).padStart(2, '0')
@@ -20,7 +21,7 @@ const wrapDistance = (d, n) => d - n * Math.round(d / n)
  * front (`active`), on screen and not covered by the detail panel (`suspend`); one button turns
  * the sound on. `mediaRef` gets the frame, which the detail panel flies from and back to.
  */
-function ProjectVideo({ project, mediaRef, active = true, suspend = false, curtain = true }) {
+function ProjectVideo({ project, mediaRef, active = true, suspend = false, curtain = true, still = false }) {
   const ref = useRef(null)
   const frameRef = useRef(null)
   const seen = useInView(frameRef, { once: true, amount: 0.05 })
@@ -42,8 +43,11 @@ function ProjectVideo({ project, mediaRef, active = true, suspend = false, curta
   useEffect(() => {
     const video = ref.current
     if (!video) return
-    if (playing) video.play().catch(() => {})
-    else {
+    if (playing) {
+      // a beat before it starts: the download and decoding don't compete with the scroll or swipe that brought it here
+      const id = setTimeout(() => video.play().catch(() => {}), 350)
+      return () => clearTimeout(id)
+    } else {
       video.pause()
       if (!active && !document.fullscreenElement) {
         video.muted = true
@@ -109,23 +113,28 @@ function ProjectVideo({ project, mediaRef, active = true, suspend = false, curta
         className="relative overflow-hidden rounded-[10px] bg-white p-1.5 md:p-3"
       >
         <div className="relative aspect-video overflow-hidden rounded-[6px] bg-tile">
-          <video
-            ref={ref}
-            src={project.video}
-            poster={project.poster}
-            muted
-            loop
-            playsInline
-            // nothing downloads until the video plays (play() then fetches it); the poster shows meanwhile
-            preload="none"
-            aria-label={t('projects.video', { title })}
-            onClick={() => {
-              // phones: a tap on the project in front opens it big
-              if (active && window.matchMedia('(max-width: 767px)').matches) expand()
-            }}
-            className="size-full object-cover"
-          />
-          {active && (
+          {still ? (
+            // projects at the side are just their poster: no video element, nothing to buffer or decode
+            <img src={project.poster} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
+          ) : (
+            <video
+              ref={ref}
+              src={project.video}
+              poster={project.poster}
+              muted
+              loop
+              playsInline
+              // nothing downloads until the video plays (play() then fetches it); the poster shows meanwhile
+              preload="none"
+              aria-label={t('projects.video', { title })}
+              onClick={() => {
+                // phones: a tap on the project in front opens it big
+                if (active && window.matchMedia('(max-width: 767px)').matches) expand()
+              }}
+              className="size-full object-cover"
+            />
+          )}
+          {active && !still && (
             <div className="absolute right-2 bottom-2 z-10 flex gap-2 sm:right-3 sm:bottom-3">
               <button
                 type="button"
@@ -162,7 +171,7 @@ function RoleBadge({ role }) {
  * One project on the 3D stage. Its place comes from `pos` (the stage's position, in projects):
  * the one in front faces you; the others step aside, turn toward the middle and sink back.
  */
-function Card({ project, index, pos, active, suspend, mediaRef, onPick }) {
+function Card({ project, index, pos, front, active, near, suspend, mediaRef, onPick }) {
   const { t, pick } = useLang()
   // how far from the front, in projects (+ = to the right), the short way round the loop
   const d = useTransform(pos, (v) => wrapDistance(index - v, projects.length))
@@ -173,9 +182,12 @@ function Card({ project, index, pos, active, suspend, mediaRef, onPick }) {
   const shade = useTransform(d, (v) => Math.min(Math.abs(v), 1.4) * 0.5)
   const zIndex = useTransform(d, (v) => 50 - Math.round(Math.abs(v) * 10))
 
+  // too far round the loop to be seen: not rendered at all (fewer 3D layers for the phone to draw)
+  if (!near) return null
+
   return (
     <motion.div style={{ x, rotateY, z, opacity, zIndex }} className="absolute inset-0 will-change-transform [backface-visibility:hidden]">
-      <ProjectVideo project={project} mediaRef={mediaRef} active={active} suspend={suspend} />
+      <ProjectVideo project={project} mediaRef={mediaRef} active={active} suspend={suspend} still={!front} curtain={front} />
       {/* the ones at the side sit in shadow */}
       <motion.div aria-hidden="true" style={{ opacity: shade }} className="pointer-events-none absolute inset-0 rounded-[10px] bg-ground" />
       {!active && (
@@ -330,6 +342,7 @@ function ProjectDetail({ index, fromRect, slideRect, onIndex, onClosed }) {
 function ProjectStage() {
   const { t, pick } = useLang()
   const n = projects.length
+  const phone = useMedia('(max-width: 767px)')
   const pos = useMotionValue(0)
   const [active, setActive] = useState(0)
   const [dir, setDir] = useState(1) // which way the words slide when the project changes
@@ -523,7 +536,10 @@ function ProjectStage() {
               project={p}
               index={i}
               pos={pos}
+              front={i === active}
               active={i === active && !dragging}
+              // phones only ever see the neighbours; wider screens see two either side
+              near={Math.abs(wrapDistance(i - active, n)) <= (phone ? 1 : 2)}
               suspend={detail !== null}
               mediaRef={(el) => (mediaRefs.current[i] = el)}
               onPick={goTo}
