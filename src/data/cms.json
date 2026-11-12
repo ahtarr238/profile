@@ -129,6 +129,26 @@
   ],
   "certificates": [
     {
+      "id": "myskill-ai-spec",
+      "title": "Artificial Intelligence Specialization",
+      "issuer": "MySkill / Education Alliance Finland · 7 courses",
+      "issued_on": "2026-11-12",
+      "image": "/images/cert-myskill-ai-spec.webp",
+      "alt": "MySkill Certificate of Skill Specialization in Artificial Intelligence, 7 courses completed",
+      "verify": "",
+      "published": true
+    },
+    {
+      "id": "myskill-ai-software-engineer",
+      "title": "AI for Software Engineer",
+      "issuer": "MySkill / Education Alliance Finland",
+      "issued_on": "2026-11-12",
+      "image": "/images/cert-myskill-ai-software-engineer.webp",
+      "alt": "MySkill Certificate of Course Completion for AI for Software Engineer",
+      "verify": "",
+      "published": true
+    },
+    {
       "id": "myskill-claude-agent",
       "title": "AI Agent with Claude AI Specialization",
       "issuer": "MySkill / Education Alliance Finland · 5 courses",
