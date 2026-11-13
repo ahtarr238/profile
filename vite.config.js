@@ -2,6 +2,12 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 import { fileURLToPath } from 'node:url'
+import { readFileSync } from 'node:fs'
+import { cleanSeo, injectSeo, robotsTxt, SITE_URL } from './tools/seo-head.mjs'
+
+// the seo block, read fresh each time so a publish from /admin (a new build) picks it up
+const CMS_FILE = fileURLToPath(new URL('./src/data/cms.json', import.meta.url))
+const readSeo = () => JSON.parse(readFileSync(CMS_FILE, 'utf8')).seo || {}
 
 // Hidden items (published: false) are dropped before cms.json is bundled, so they never ship
 // in the site's JavaScript. (They are still in the repo itself: see docs/admin-setup.md.)
@@ -13,12 +19,20 @@ function publishedOnly() {
       if (!id.replace(/\\/g, '/').endsWith('/src/data/cms.json')) return null
       const cms = JSON.parse(code)
       for (const key of Object.keys(cms)) if (Array.isArray(cms[key])) cms[key] = cms[key].filter((item) => item.published)
+      delete cms.seo // only index.html needs it (seoHtml below), not the site's JavaScript
       return { code: JSON.stringify(cms), map: null }
     },
   }
 }
 
-const SITE_URL = 'https://ahtar.oceanspace.co.id'
+// title, description, link previews and JSON-LD from cms.json's seo block, into index.html
+// (dev and build alike). Runs first, so the font preload below finds the </title> it writes.
+function seoHtml() {
+  return {
+    name: 'seo-html',
+    transformIndexHtml: { order: 'pre', handler: (html) => injectSeo(html, readSeo()) },
+  }
+}
 
 // robots.txt and sitemap.xml, written at build time so the sitemap date is always the deploy date
 function seoFiles() {
@@ -36,7 +50,7 @@ function seoFiles() {
       this.emitFile({
         type: 'asset',
         fileName: 'robots.txt',
-        source: `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`,
+        source: robotsTxt(readSeo()),
       })
       this.emitFile({
         type: 'asset',
@@ -46,7 +60,7 @@ function seoFiles() {
   <url>
     <loc>${SITE_URL}/</loc>
     <lastmod>${today}</lastmod>
-    <image:image><image:loc>${SITE_URL}/og.jpg</image:loc></image:image>
+    <image:image><image:loc>${cleanSeo(readSeo()).shareImage}</image:loc></image:image>
     <image:image><image:loc>${SITE_URL}/images/ahtar.webp</image:loc></image:image>
   </url>
 </urlset>
@@ -57,7 +71,7 @@ function seoFiles() {
 }
 
 export default defineConfig({
-  plugins: [publishedOnly(), seoFiles(), react(), tailwindcss()],
+  plugins: [publishedOnly(), seoHtml(), seoFiles(), react(), tailwindcss()],
   // @/ is src/ (the admin's shadcn components import through it)
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   // Inline PostCSS config so Vite doesn't pick up a postcss.config from a parent folder.

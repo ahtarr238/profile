@@ -52,6 +52,30 @@ export async function imageToWebp(file, maxW = 1600) {
   return canvasToWebp(canvas)
 }
 
+/**
+ * The link-preview picture (WhatsApp, LinkedIn, X…): cropped from the middle to exactly
+ * 1200×630, the size every one of them shows in full, as JPEG, which all of them read.
+ */
+export async function imageToShareJpeg(file) {
+  if (!IMAGE_TYPES.includes(file.type)) throw new Error('Use a JPG, PNG or WebP image')
+  const bitmap = await createImageBitmap(file)
+  const W = 1200
+  const H = 630
+  const scale = Math.max(W / bitmap.width, H / bitmap.height) // cover: fill the frame, trim the overflow
+  const w = bitmap.width * scale
+  const h = bitmap.height * scale
+  const canvas = document.createElement('canvas')
+  canvas.width = W
+  canvas.height = H
+  const ctx = canvas.getContext('2d')
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(bitmap, (W - w) / 2, (H - h) / 2, w, h)
+  bitmap.close()
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not encode the image'))), 'image/jpeg', 0.86),
+  )
+}
+
 /** A still from about a second into the video, used as its poster. */
 export function videoPoster(file, maxW = 1280) {
   return new Promise((resolve, reject) => {

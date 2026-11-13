@@ -15,14 +15,17 @@ import {
   Pencil,
   Plus,
   RotateCcw,
+  Search,
   Trash2,
   UploadCloud,
 } from 'lucide-react'
 import { GitHub, UPLOADS_DIR, uploadRepoPath } from './github'
 import { checkVideo, imageToWebp, MAX_VIDEO_MB, pdfToWebp, videoPoster } from './media'
 import { Brand, FeaturedIcon, Field, Notice } from './ui'
+import FilePick from './FilePick'
 import { friendly } from './errors'
 import StatsPanel from './StatsPanel'
+import SeoPanel from './SeoPanel'
 import { SessionCard, SessionClock, SessionWarning } from './SessionClock'
 import { useTimeLeft } from './useTimeLeft'
 import { SESSION_MINUTES } from './config'
@@ -81,55 +84,6 @@ const KINDS = {
   },
 }
 const FILE_FIELDS = ['image', 'video', 'poster']
-
-/** Untitled UI's file uploader: click or drop. The file is prepared in the browser, nothing is sent yet. */
-function FilePick({ label, hint, accept, onPick, preview, kind = 'image' }) {
-  const [over, setOver] = useState(false)
-  const take = (f) => f && onPick(f)
-  return (
-    <div className="grid gap-1.5">
-      <span className="text-sm font-medium text-ut-700">{label}</span>
-      {preview &&
-        (kind === 'video' ? (
-          <video src={preview} muted playsInline controls className="aspect-video w-full rounded-lg border border-ut-200 bg-ut-900 object-contain" />
-        ) : (
-          <img src={preview} alt="" className="max-h-56 w-full rounded-lg border border-ut-200 bg-white object-contain" />
-        ))}
-      <label
-        onDragOver={(e) => {
-          e.preventDefault()
-          setOver(true)
-        }}
-        onDragLeave={() => setOver(false)}
-        onDrop={(e) => {
-          e.preventDefault()
-          setOver(false)
-          take(e.dataTransfer.files?.[0])
-        }}
-        className={cn(
-          'flex cursor-pointer flex-col items-center rounded-xl border bg-white px-6 py-4 text-center transition-[border-color,box-shadow] focus-within:ring-4 focus-within:ring-brand-100 hover:border-brand-300',
-          over ? 'border-brand-600 ring-4 ring-brand-100' : 'border-ut-200',
-        )}
-      >
-        <FeaturedIcon icon={UploadCloud} />
-        <span className="mt-3 text-sm text-ut-600">
-          <span className="font-semibold text-brand-700">{preview ? 'Click to replace' : 'Click to upload'}</span> or drag and drop
-        </span>
-        {hint && <span className="mt-1 text-xs leading-[18px] text-ut-600">{hint}</span>}
-        <input
-          type="file"
-          accept={accept}
-          className="sr-only"
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            e.target.value = ''
-            take(f)
-          }}
-        />
-      </label>
-    </div>
-  )
-}
 
 /** Add/edit form, in a sheet from the right. Files are prepared here and handed back; nothing reaches GitHub until Publish. */
 function Editor({ kind, row, taken, previewOf, onClose, onDone }) {
@@ -410,7 +364,7 @@ export default function Dashboard({ session, onSignOut }) {
 
   const previewOf = useCallback((sitePath) => (sitePath && staged[`public${sitePath}`]?.preview) || sitePath || '', [staged])
   const rows = useMemo(() => {
-    const list = draft?.[tab] || []
+    const list = Array.isArray(draft?.[tab]) ? draft[tab] : []
     return tab === 'certificates' ? [...list].sort((a, b) => b.issued_on.localeCompare(a.issued_on)) : list
   }, [draft, tab])
   const k = KINDS[tab]
@@ -479,6 +433,19 @@ export default function Dashboard({ session, onSignOut }) {
     setConfirm(null)
   }
 
+  // the SEO form hands back the whole block, plus a new link-preview picture if one was picked
+  const saveSeo = (next, file) => {
+    const old = draft?.seo?.share_image
+    if (file) {
+      const sitePath = `/uploads/seo/${crypto.randomUUID()}.jpg`
+      setStaged((s) => ({ ...s, [`public${sitePath}`]: { blob: file.blob, preview: file.preview } }))
+      if (old) dropFile(old)
+      next = { ...next, share_image: sitePath }
+    }
+    setDraft((d) => ({ ...d, seo: next }))
+    setLog((l) => [...l, 'Update SEO settings'])
+  }
+
   const discard = () => {
     setDraft(structuredClone(base.cms))
     reset()
@@ -505,12 +472,13 @@ export default function Dashboard({ session, onSignOut }) {
     setPublishing(false)
   }
 
-  const taken = useMemo(() => new Set((draft?.[tab] || []).map((r) => r.id)), [draft, tab])
+  const taken = useMemo(() => new Set((Array.isArray(draft?.[tab]) ? draft[tab] : []).map((r) => r.id)), [draft, tab])
   const counts = { projects: draft?.projects?.length, certificates: draft?.certificates?.length }
   const tabs = [
     { key: 'visitors', label: 'Visitors', icon: ChartColumn },
     { key: 'projects', label: 'Projects', icon: Clapperboard },
     { key: 'certificates', label: 'Certificates', icon: Award },
+    { key: 'seo', label: 'SEO', icon: Search },
   ]
   const current = tabs.find((x) => x.key === tab)
   const initials = (session.login || 'a').slice(0, 2).toUpperCase()
@@ -672,7 +640,9 @@ export default function Dashboard({ session, onSignOut }) {
               <p className="mt-1 text-base text-ut-600">
                 {tab === 'visitors'
                   ? 'Who came by, from where, and what they did. Counted without cookies.'
-                  : `${counts[tab] ?? 0} in total. Changes stay here until you publish them.`}
+                  : tab === 'seo'
+                    ? 'How the site shows up in search results and in shared links. Changes stay here until you publish them.'
+                    : `${counts[tab] ?? 0} in total. Changes stay here until you publish them.`}
               </p>
             </div>
             {k && (
@@ -687,6 +657,8 @@ export default function Dashboard({ session, onSignOut }) {
 
           <div className="mt-6 md:mt-8">
             {tab === 'visitors' && <StatsPanel token={session.token} />}
+            {/* keyed on the saved block, so a discard or a fresh load resets the form */}
+            {tab === 'seo' && draft && <SeoPanel key={JSON.stringify(draft.seo ?? null)} seo={draft.seo} previewOf={previewOf} onSave={saveSeo} raised={dirty} />}
 
             {k && draft && rows.length === 0 && (
               <div className="flex flex-col items-center rounded-xl border border-ut-200 px-6 py-16 text-center shadow-xs">

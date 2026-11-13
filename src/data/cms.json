@@ -218,5 +218,43 @@
       "verify": "",
       "published": true
     }
-  ]
+  ],
+  "seo": {
+    "title": "Ahtar Maulana Gurning · Solution Engineer & Web Developer",
+    "description": "Portfolio of Ahtar Maulana Gurning, a solution engineer from Bogor, Indonesia: web apps built with React, Tailwind CSS and Laravel, plus projects and certificates.",
+    "share_title": "",
+    "share_description": "Solution engineer from Bogor, Indonesia. I build web apps end to end with React, Tailwind CSS and Laravel.",
+    "share_image": "/og.jpg",
+    "share_image_alt": "ahtar. written large over a dusk mountain landscape, with the line: Solution engineer from Bogor.",
+    "indexable": true,
+    "google_verification": "",
+    "bing_verification": "",
+    "person": {
+      "name": "Ahtar Maulana Gurning",
+      "alternate_name": "ahtar",
+      "job_title": "Solution Engineer",
+      "description": "Solution engineer from Bogor, Indonesia who builds web apps end to end with React, Tailwind CSS and Laravel.",
+      "image": "/images/ahtar.webp",
+      "email": "ahtarmaulana23@gmail.com",
+      "locality": "Bogor",
+      "region": "West Java",
+      "country": "ID",
+      "school": "SMK Wikrama Bogor",
+      "skills": [
+        "React",
+        "Tailwind CSS",
+        "Laravel",
+        "Filament",
+        "Flutter",
+        "Dart",
+        "JavaScript",
+        "Web development",
+        "UI/UX"
+      ],
+      "links": [
+        "https://github.com/ahtarr238",
+        "https://www.linkedin.com/in/ahtar-maulana-9b0506328"
+      ]
+    }
+  }
 }

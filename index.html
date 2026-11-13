@@ -3,14 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Title, description, link previews and the JSON-LD below are written from the "seo"
+         block in src/data/cms.json (edited in /admin → SEO) by tools/seo-head.mjs on every build.
+         Edit them there: anything typed between the markers is replaced. -->
+    <!-- seo:start -->
     <title>Ahtar Maulana Gurning · Solution Engineer &amp; Web Developer</title>
-    <meta
-      name="description"
-      content="Portfolio of Ahtar Maulana Gurning, a solution engineer from Bogor, Indonesia: web apps built with React, Tailwind CSS and Laravel, plus projects and certificates."
-    />
-    <link rel="canonical" href="https://ahtar.oceanspace.co.id/" />
-    <meta name="author" content="Ahtar Maulana Gurning" />
-    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <!-- seo:end -->
     <meta name="theme-color" content="#070C1A" />
 
     <!-- icons: Google's results want a square at a multiple of 48px; browsers take the SVG.
@@ -20,71 +18,15 @@
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-
-    <!-- link previews (WhatsApp, LinkedIn, Facebook, X, Discord) -->
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Ahtar Maulana Gurning" />
-    <meta property="og:locale" content="en_US" />
-    <meta property="og:url" content="https://ahtar.oceanspace.co.id/" />
-    <meta property="og:title" content="Ahtar Maulana Gurning · Solution Engineer &amp; Web Developer" />
-    <meta property="og:description" content="Solution engineer from Bogor, Indonesia. I build web apps end to end with React, Tailwind CSS and Laravel." />
-    <meta property="og:image" content="https://ahtar.oceanspace.co.id/og.jpg" />
-    <meta property="og:image:type" content="image/jpeg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="ahtar. written large over a dusk mountain landscape, with the line: Solution engineer from Bogor." />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Ahtar Maulana Gurning · Solution Engineer &amp; Web Developer" />
-    <meta name="twitter:description" content="Solution engineer from Bogor, Indonesia. I build web apps end to end with React, Tailwind CSS and Laravel." />
-    <meta name="twitter:image" content="https://ahtar.oceanspace.co.id/og.jpg" />
-
-    <!-- who this site is about, for search engines (data only, never executed) -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "Person",
-            "@id": "https://ahtar.oceanspace.co.id/#person",
-            "name": "Ahtar Maulana Gurning",
-            "alternateName": "ahtar",
-            "jobTitle": "Solution Engineer",
-            "description": "Solution engineer from Bogor, Indonesia who builds web apps end to end with React, Tailwind CSS and Laravel.",
-            "url": "https://ahtar.oceanspace.co.id/",
-            "image": "https://ahtar.oceanspace.co.id/images/ahtar.webp",
-            "email": "mailto:ahtarmaulana23@gmail.com",
-            "address": { "@type": "PostalAddress", "addressLocality": "Bogor", "addressRegion": "West Java", "addressCountry": "ID" },
-            "affiliation": { "@type": "EducationalOrganization", "name": "SMK Wikrama Bogor" },
-            "knowsAbout": ["React", "Tailwind CSS", "Laravel", "Filament", "Flutter", "Dart", "JavaScript", "Web development", "UI/UX"],
-            "sameAs": ["https://github.com/ahtarr238", "https://www.linkedin.com/in/ahtar-maulana-9b0506328"]
-          },
-          {
-            "@type": "WebSite",
-            "@id": "https://ahtar.oceanspace.co.id/#website",
-            "url": "https://ahtar.oceanspace.co.id/",
-            "name": "Ahtar Maulana Gurning",
-            "inLanguage": "en",
-            "publisher": { "@id": "https://ahtar.oceanspace.co.id/#person" }
-          },
-          {
-            "@type": "ProfilePage",
-            "@id": "https://ahtar.oceanspace.co.id/#profile",
-            "url": "https://ahtar.oceanspace.co.id/",
-            "name": "Ahtar Maulana Gurning · Solution Engineer & Web Developer",
-            "isPartOf": { "@id": "https://ahtar.oceanspace.co.id/#website" },
-            "mainEntity": { "@id": "https://ahtar.oceanspace.co.id/#person" }
-          }
-        ]
-      }
-    </script>
   </head>
   <body>
     <div id="root"></div>
     <!-- for crawlers and browsers without JavaScript: the essentials, as plain HTML -->
     <noscript>
       <main style="max-width: 40rem; margin: 3rem auto; padding: 0 1.5rem; font-family: system-ui, sans-serif; color: #e9f1f8; background: #070c1a">
+        <!-- seo:noscript -->
         <h1>Ahtar Maulana Gurning, Solution Engineer</h1>
-        <p>Solution engineer from Bogor, Indonesia. I build web apps end to end with React, Tailwind CSS and Laravel.</p>
+        <!-- /seo:noscript -->
         <h2>Projects</h2>
         <ul>
           <li>Ocean Space company website</li>
