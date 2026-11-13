@@ -102,4 +102,14 @@ export default defineConfig({
   // Inline PostCSS config so Vite doesn't pick up a postcss.config from a parent folder.
   // Tailwind v4 runs through its Vite plugin above.
   css: { postcss: { plugins: [] } },
+  // two pages: the site, and 404.html, which Vercel serves (with a 404 status) for any address
+  // the site doesn't have
+  build: {
+    rolldownOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        notFound: fileURLToPath(new URL('./404.html', import.meta.url)),
+      },
+    },
+  },
 })

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page not found · ahtar.</title>
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#070C1A" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Served by Vercel, with a 404 status, for any address the site doesn't have.
+         The night scene is the hero's own (tools/hero-layers); the words switch to
+         Bahasa Indonesia the same way the site does (src/notfound.js). -->
+    <style>
+      :root {
+        --ground: #070c1a;
+        --sky-soft: #e9f1f8;
+        --mist: #a9b6cc;
+        --coral: #ee6a48;
+        --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html,
+      body {
+        height: 100%;
+        background: var(--ground);
+        color: var(--sky-soft);
+        font-family: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        position: relative;
+        min-height: 100svh;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        padding: 6rem 1.5rem 30svh;
+      }
+      .layer {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center bottom;
+        background-repeat: no-repeat;
+      }
+      .sky {
+        background-image: url('/hero-layers/night/sky.webp');
+      }
+      .far {
+        background-image: url('/hero-layers/night/far.webp');
+        animation: rise 1.6s var(--ease) both;
+      }
+      .near {
+        background-image: url('/hero-layers/night/near.webp');
+        animation: rise 1.6s var(--ease) 0.1s both;
+      }
+      @media (max-width: 767px) {
+        .sky {
+          background-image: url('/hero-layers/night/sky-m.webp');
+        }
+        .far {
+          background-image: url('/hero-layers/night/far-m.webp');
+        }
+        .near {
+          background-image: url('/hero-layers/night/near-m.webp');
+        }
+      }
+      /* the foot of the hills fades into the page, as on the home page */
+      .fade {
+        position: absolute;
+        inset: auto 0 0;
+        height: 30%;
+        background: linear-gradient(to bottom, transparent, var(--ground));
+      }
+      .copy {
+        position: relative;
+        max-width: 34rem;
+        text-align: center;
+        animation: up 0.9s var(--ease) 0.15s both;
+      }
+      .code {
+        font-family: 'Outfit Variable', ui-sans-serif, system-ui, sans-serif;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+        color: var(--coral);
+      }
+      h1 {
+        margin-top: 0.75rem;
+        font-family: 'Outfit Variable', ui-sans-serif, system-ui, sans-serif;
+        font-weight: 400;
+        font-size: clamp(44px, 9vw, 96px);
+        line-height: 0.95;
+        letter-spacing: -0.05em;
+      }
+      h1 .dot {
+        color: var(--coral);
+      }
+      .lead {
+        margin: 1.25rem auto 0;
+        max-width: 26rem;
+        font-size: 17px;
+        line-height: 1.55;
+        color: var(--mist);
+      }
+      .home {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-top: 2rem;
+        height: 48px;
+        padding: 0 1.25rem;
+        border-radius: 4px;
+        background: var(--coral);
+        color: var(--ground);
+        font-size: 15px;
+        font-weight: 500;
+        text-decoration: none;
+        transition:
+          background-color 150ms ease-out,
+          transform 150ms ease-out;
+      }
+      .home:hover {
+        background: #f27c5d;
+      }
+      .home:active {
+        transform: scale(0.97);
+      }
+      .home svg {
+        transition: transform 200ms ease-out;
+      }
+      .home:hover svg {
+        transform: translateX(-2px);
+      }
+      :focus-visible {
+        outline: 2px solid var(--coral);
+        outline-offset: 3px;
+      }
+      @keyframes rise {
+        from {
+          transform: translateY(6%);
+          opacity: 0;
+        }
+      }
+      @keyframes up {
+        from {
+          transform: translateY(16px);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div aria-hidden="true">
+        <div class="layer sky"></div>
+        <div class="layer far"></div>
+        <div class="layer near"></div>
+        <div class="fade"></div>
+      </div>
+      <div class="copy">
+        <p class="code">404</p>
+        <h1><span data-en="Lost in the hills" data-id="Tersesat di bukit">Lost in the hills</span><span class="dot">?</span></h1>
+        <p class="lead" data-en="This page doesn’t exist, or it has moved. The way back is right here." data-id="Halaman ini tidak ada, atau sudah pindah. Jalan pulangnya ada di sini.">
+          This page doesn’t exist, or it has moved. The way back is right here.
+        </p>
+        <a class="home" href="/">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          <span data-en="Back home" data-id="Kembali ke beranda">Back home</span>
+        </a>
+      </div>
+    </main>
+    <script type="module" src="/src/notfound.js"></script>
+  </body>
+</html>
