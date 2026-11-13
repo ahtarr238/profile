@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { animate, useInView } from 'motion/react'
 
-/** A number that counts up from 0 the first time it is seen. */
+/** A number that counts up from 0 the first time it is seen; the real figure is in the page from the start. */
 export default function CountUp({ value, duration = 1.4 }) {
   const ref = useRef(null)
   const seen = useInView(ref, { once: true, amount: 0.6 })
@@ -20,7 +20,11 @@ export default function CountUp({ value, duration = 1.4 }) {
 
   return (
     <span ref={ref} className="tabular-nums">
-      {n}
+      {/* the real number for screen readers and search engines, which read the page without
+          scrolling; the counting figure is for the eye only, drawn with CSS content so it never
+          joins the page text (which would read "6 0 projects") */}
+      <span className="sr-only">{target}</span>
+      <span aria-hidden="true" data-n={n} className="before:content-[attr(data-n)]" />
     </span>
   )
 }

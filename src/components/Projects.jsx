@@ -634,6 +634,20 @@ function ProjectStage() {
         ))}
       </div>
 
+      {/* Every project's words, the same ones the carousel shows one at a time, kept in the page so
+          search engines read all six (the carousel only mounts the cards near the front). Hidden
+          from screen readers, which already reach each project through the carousel. */}
+      <ul className="sr-only" aria-hidden="true">
+        {projects.map((p) => (
+          <li key={p.id}>
+            <h3>{pick(p, 'title')}</h3>
+            {p.role && <p>{p.role}</p>}
+            <p>{pick(p, 'description')}</p>
+            <p>{pick(p, 'tags').join(', ')}</p>
+          </li>
+        ))}
+      </ul>
+
       {detail && <ProjectDetail index={detail.index} fromRect={detail.from} slideRect={slideRect} onIndex={switchDetail} onClosed={closed} />}
     </div>
   )

@@ -131,11 +131,50 @@ export function seoHead(raw) {
   return lines.filter(Boolean).join('\n    ') // the optional tags left out are '' or false
 }
 
-/** The heading and line inside <noscript>, for crawlers and browsers without JavaScript. */
-export function seoNoscript(raw) {
+const isoDate = (s) => (/^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s : '')
+
+/**
+ * The page's content as plain HTML inside <noscript>, for crawlers and browsers that don't run
+ * JavaScript (Bing often, and most AI search crawlers): who this is, every published project
+ * with its description, and every certificate. Built from cms.json, so it never drifts from the site.
+ */
+export function seoNoscript(raw, cms = {}) {
   const s = cleanSeo(raw)
   const p = s.person
-  return `<h1>${esc(p.name)}${p.jobTitle ? `, ${esc(p.jobTitle)}` : ''}</h1>\n        <p>${esc(p.description || s.description)}</p>`
+  const pad = '\n        '
+  const bio = p.description || s.description
+  const out = [`<h1>${esc(p.name)}${p.jobTitle ? `, ${esc(p.jobTitle)}` : ''}</h1>`, bio && `<p>${esc(bio)}</p>`].filter(Boolean)
+  const where = [p.school && `Studying at ${esc(p.school)}`, [p.locality, p.region].filter(Boolean).map(esc).join(', ')].filter(Boolean)
+  if (where.length) out.push(`<p>${where.join(' · ')}</p>`)
+  if (p.skills.length) out.push(`<p>Works with ${p.skills.map(esc).join(', ')}.</p>`)
+
+  const projects = (Array.isArray(cms.projects) ? cms.projects : []).filter((x) => x && x.published)
+  if (projects.length) {
+    out.push('<h2>Projects</h2>', '<ul>')
+    for (const x of projects) {
+      const title = text(x.title, 160)
+      const role = text(x.role, 40)
+      const description = text(x.description, 1200)
+      const tags = (Array.isArray(x.tags) ? x.tags : []).map((t) => text(t, 40)).filter(Boolean)
+      out.push(
+        `  <li><strong>${esc(title)}</strong>${role ? ` (${esc(role)})` : ''}${description ? `: ${esc(description)}` : ''}${tags.length ? ` <em>${tags.map(esc).join(' · ')}</em>` : ''}</li>`,
+      )
+    }
+    out.push('</ul>')
+  }
+
+  const certificates = (Array.isArray(cms.certificates) ? cms.certificates : [])
+    .filter((x) => x && x.published)
+    .sort((a, b) => String(b.issued_on).localeCompare(String(a.issued_on)))
+  if (certificates.length) {
+    out.push('<h2>Certificates</h2>', '<ul>')
+    for (const x of certificates) {
+      const date = isoDate(x.issued_on)
+      out.push(`  <li>${esc(text(x.title, 160))}${x.issuer ? `, ${esc(text(x.issuer, 160))}` : ''}${date ? ` (${date.slice(0, 4)})` : ''}</li>`)
+    }
+    out.push('</ul>')
+  }
+  return out.join(pad)
 }
 
 /** robots.txt: hidden from search entirely when "Show in search results" is off. */
@@ -147,9 +186,9 @@ export function robotsTxt(raw) {
 }
 
 /** Puts the generated tags between the markers in index.html. */
-export function injectSeo(html, raw) {
+export function injectSeo(html, raw, cms = {}) {
   return html
     // function replacers: a "$&" typed into a title must stay text, not become a replace pattern
     .replace(/<!-- seo:start -->[\s\S]*?<!-- seo:end -->/, () => `<!-- seo:start -->\n    ${seoHead(raw)}\n    <!-- seo:end -->`)
-    .replace(/<!-- seo:noscript -->[\s\S]*?<!-- \/seo:noscript -->/, () => `<!-- seo:noscript -->\n        ${seoNoscript(raw)}\n        <!-- /seo:noscript -->`)
+    .replace(/<!-- seo:noscript -->[\s\S]*?<!-- \/seo:noscript -->/, () => `<!-- seo:noscript -->\n        ${seoNoscript(raw, cms)}\n        <!-- /seo:noscript -->`)
 }

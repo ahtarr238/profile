@@ -7,7 +7,8 @@ import { cleanSeo, injectSeo, robotsTxt, SITE_URL } from './tools/seo-head.mjs'
 
 // the seo block, read fresh each time so a publish from /admin (a new build) picks it up
 const CMS_FILE = fileURLToPath(new URL('./src/data/cms.json', import.meta.url))
-const readSeo = () => JSON.parse(readFileSync(CMS_FILE, 'utf8')).seo || {}
+const readCms = () => JSON.parse(readFileSync(CMS_FILE, 'utf8'))
+const readSeo = () => readCms().seo || {}
 
 // Hidden items (published: false) are dropped before cms.json is bundled, so they never ship
 // in the site's JavaScript. (They are still in the repo itself: see docs/admin-setup.md.)
@@ -30,7 +31,11 @@ function publishedOnly() {
 function seoHtml() {
   return {
     name: 'seo-html',
-    transformIndexHtml: { order: 'pre', handler: (html) => injectSeo(html, readSeo()) },
+    transformIndexHtml: { order: 'pre', handler: (html) => {
+        const cms = readCms()
+        return injectSeo(html, cms.seo || {}, cms)
+      },
+    },
   }
 }
 
