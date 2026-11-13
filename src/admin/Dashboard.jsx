@@ -12,6 +12,7 @@ import {
   FolderOpen,
   History,
   LogOut,
+  MessageSquareText,
   MoreVertical,
   Pencil,
   Plus,
@@ -28,6 +29,7 @@ import { friendly } from './errors'
 import StatsPanel from './StatsPanel'
 import SeoPanel from './SeoPanel'
 import HistoryPanel from './HistoryPanel'
+import GuestbookPanel from './GuestbookPanel'
 import { SessionCard, SessionClock, SessionWarning } from './SessionClock'
 import { useTimeLeft } from './useTimeLeft'
 import { SESSION_MINUTES } from './config'
@@ -508,6 +510,7 @@ export default function Dashboard({ session, onSignOut }) {
     { key: 'projects', label: 'Projects', icon: Clapperboard },
     { key: 'certificates', label: 'Certificates', icon: Award },
     { key: 'seo', label: 'SEO', icon: Search },
+    { key: 'guestbook', label: 'Guestbook', icon: MessageSquareText },
     { key: 'history', label: 'History', icon: History },
   ]
   const current = tabs.find((x) => x.key === tab)
@@ -669,7 +672,9 @@ export default function Dashboard({ session, onSignOut }) {
               <p className="mt-1 text-base text-ut-600">
                 {tab === 'visitors'
                   ? 'Who came by, from where, and what they did. Counted without cookies.'
-                  : tab === 'history'
+                  : tab === 'guestbook'
+                    ? 'Messages visitors leave on the site. Nothing shows until you approve it.'
+                    : tab === 'history'
                     ? 'Every published change, and a way back to any of them.'
                     : tab === 'seo'
                     ? 'How the site shows up in search results and in shared links. Changes stay here until you publish them.'
@@ -688,6 +693,7 @@ export default function Dashboard({ session, onSignOut }) {
 
           <div className="mt-6 md:mt-8">
             {tab === 'visitors' && <StatsPanel token={session.token} catalog={draft && { projects: draft.projects, certificates: draft.certificates }} />}
+            {tab === 'guestbook' && <GuestbookPanel token={session.token} />}
             {tab === 'history' && base && <HistoryPanel gh={gh} head={base.head} dirty={dirty} onRestore={restoreVersion} />}
             {/* keyed on the saved block, so a discard or a fresh load resets the form */}
             {tab === 'seo' && draft && <SeoPanel key={JSON.stringify(draft.seo ?? null)} seo={draft.seo} previewOf={previewOf} onSave={saveSeo} raised={dirty} />}

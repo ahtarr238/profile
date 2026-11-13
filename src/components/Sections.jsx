@@ -4,6 +4,8 @@ import About from './About'
 import Projects from './Projects'
 import Certificates from './Certificates'
 import Contact from './Contact'
+import Activity from './Activity'
+import Guestbook from './Guestbook'
 
 /**
  * Everything below the hero. It's its own chunk and mounts a moment after the first paint
@@ -20,6 +22,8 @@ export default function Sections() {
       </AboutEntry>
       <Projects />
       <Certificates />
+      <Activity />
+      <Guestbook />
       <Contact />
     </>
   )
