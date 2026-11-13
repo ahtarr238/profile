@@ -23,6 +23,9 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* /admin has its own Tailwind entry (src/admin/admin.css): none of its classes ship to visitors */
+@source not "./admin";
+
 @layer base {
   html {
     background: var(--color-ground);

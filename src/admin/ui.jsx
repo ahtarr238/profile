@@ -1,64 +1,68 @@
-// Small building blocks shared by the admin screens, in the site's own look.
+// Small building blocks shared by the admin screens: shadcn underneath, Untitled UI on top.
+import { AlertCircle, CheckCircle2, Info } from 'lucide-react'
+import { Input } from '@/admin/components/ui/input'
+import { Label } from '@/admin/components/ui/label'
+import { Textarea } from '@/admin/components/ui/textarea'
+import { cn } from '@/admin/lib/utils'
 
-export function Shell({ children, wide = false }) {
+/** The mark: the site's "ahtar." in a square, then the word. */
+export function Brand({ suffix = 'admin', className = '' }) {
   return (
-    <div className="min-h-svh bg-ground text-sky-soft">
-      <div className={`mx-auto px-5 py-10 md:px-8 md:py-14 ${wide ? 'max-w-[1100px]' : 'max-w-[440px]'}`}>{children}</div>
-    </div>
+    <span className={cn('flex items-center gap-2.5', className)}>
+      <span className="grid size-8 place-items-center rounded-lg bg-[#070c1a] text-[15px] font-semibold text-white shadow-xs">
+        <span>
+          a<span className="text-brand-500">.</span>
+        </span>
+      </span>
+      <span className="text-[17px] font-semibold tracking-[-0.01em] text-ut-900">
+        ahtar<span className="text-brand-500">.</span> <span className="font-normal text-ut-500">{suffix}</span>
+      </span>
+    </span>
   )
 }
 
-export function Brand({ suffix = 'admin' }) {
+/** Untitled UI's featured icon: an icon in a soft square with a ring. */
+export function FeaturedIcon({ icon: Icon, tone = 'gray', className = '' }) {
+  const look = {
+    gray: 'border-ut-200 bg-white text-ut-700 shadow-xs',
+    brand: 'border-brand-100 bg-brand-50 text-brand-600',
+    success: 'border-[#d1fadf] bg-[#ecfdf3] text-[#079455]',
+    error: 'border-[#fee4e2] bg-[#fef3f2] text-[#d92d20]',
+  }[tone]
   return (
-    <p className="font-display text-[22px] tracking-[-0.03em]">
-      ahtar<span className="text-coral">.</span> <span className="text-mist">{suffix}</span>
-    </p>
+    <span className={cn('grid size-10 shrink-0 place-items-center rounded-lg border', look, className)}>
+      <Icon className="size-5" strokeWidth={1.9} aria-hidden="true" />
+    </span>
   )
 }
 
 export function Field({ label, hint, error, as = 'input', id, className = '', ...props }) {
-  const Tag = as
+  const Control = as === 'textarea' ? Textarea : Input
   return (
-    <label htmlFor={id} className={`block ${className}`}>
-      <span className="block text-[13px] text-mist">{label}</span>
-      <Tag
-        id={id}
-        aria-invalid={error ? 'true' : undefined}
-        className={`mt-1.5 block w-full rounded-[4px] border bg-tile px-3 text-[15px] text-sky-soft outline-none transition-colors duration-150 placeholder:text-dim focus:border-coral ${
-          as === 'textarea' ? 'min-h-28 py-2.5' : 'h-11'
-        } ${error ? 'border-coral' : 'border-sky-soft/20'}`}
-        {...props}
-      />
-      {hint && !error && <span className="mt-1 block text-[12px] text-dim">{hint}</span>}
-      {error && <span className="mt-1 block text-[12px] text-coral">{error}</span>}
-    </label>
+    <div className={cn('grid gap-1.5', className)}>
+      <Label htmlFor={id} className="text-ut-700">
+        {label}
+      </Label>
+      <Control id={id} aria-invalid={error ? 'true' : undefined} {...props} />
+      {hint && !error && <p className="text-sm text-ut-600">{hint}</p>}
+      {error && <p className="text-sm text-[#d92d20]">{error}</p>}
+    </div>
   )
 }
 
-export function Btn({ kind = 'primary', className = '', ...props }) {
-  const look = {
-    primary: 'bg-coral text-ground hover:bg-[#f27c5d]',
-    ghost: 'border border-sky-soft/30 text-sky-soft hover:border-sky-soft/70',
-    danger: 'border border-coral/60 text-coral hover:bg-coral hover:text-ground',
-    plain: 'text-mist hover:text-sky-soft',
-  }[kind]
-  return (
-    <button
-      type="button"
-      className={`inline-flex h-11 items-center justify-center gap-2 rounded-[4px] px-4 text-[14px] font-medium transition-[background-color,border-color,color,opacity] duration-150 ease-out disabled:pointer-events-none disabled:opacity-40 ${look} ${className}`}
-      {...props}
-    />
-  )
-}
-
-export function Notice({ tone = 'info', children }) {
+/** A status line in Untitled UI's alert style. */
+export function Notice({ tone = 'info', children, className = '' }) {
   if (!children) return null
+  const look = {
+    info: { box: 'border-ut-300 bg-ut-25 text-ut-700', icon: Info, iconColor: 'text-ut-600' },
+    success: { box: 'border-[#75e0a7] bg-[#f6fef9] text-[#067647]', icon: CheckCircle2, iconColor: 'text-[#079455]' },
+    error: { box: 'border-[#fda29b] bg-[#fffbfa] text-[#b42318]', icon: AlertCircle, iconColor: 'text-[#d92d20]' },
+  }[tone]
+  const Icon = look.icon
   return (
-    <p
-      role={tone === 'error' ? 'alert' : 'status'}
-      className={`rounded-[4px] px-3 py-2.5 text-[14px] ${tone === 'error' ? 'bg-coral/15 text-coral' : 'bg-sky-soft/10 text-sky-soft'}`}
-    >
-      {children}
-    </p>
+    <div role={tone === 'error' ? 'alert' : 'status'} className={cn('flex items-start gap-3 rounded-xl border p-4 text-sm shadow-xs', look.box, className)}>
+      <Icon className={cn('mt-px size-5 shrink-0', look.iconColor)} strokeWidth={1.9} aria-hidden="true" />
+      <p className="leading-5 font-medium">{children}</p>
+    </div>
   )
 }

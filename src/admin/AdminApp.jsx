@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ShieldCheck } from 'lucide-react'
+import { LoaderCircle, LockKeyhole, ShieldCheck } from 'lucide-react'
+import '@fontsource-variable/inter'
+import './admin.css'
 import { GithubIcon } from '../components/BrandIcons'
 import { GitHub } from './github'
 import { REPO, SESSION_MINUTES } from './config'
-import { Brand, Notice, Shell } from './ui'
+import { Brand, FeaturedIcon, Notice } from './ui'
+import { Button } from '@/admin/components/ui/button'
 import { friendly, signInError } from './errors'
 import Dashboard from './Dashboard'
 
@@ -104,6 +107,12 @@ export default function AdminApp() {
     setStage('login')
   }, [])
 
+  // the admin's light look (admin.css) hangs off <html>, so popups rendered into <body> get it too
+  useEffect(() => {
+    document.documentElement.classList.add('admin-ui')
+    return () => document.documentElement.classList.remove('admin-ui')
+  }, [])
+
   // keep the page out of search results
   useEffect(() => {
     const meta = document.createElement('meta')
@@ -185,28 +194,47 @@ export default function AdminApp() {
   if (stage === 'ready') return <Dashboard session={session} onSignOut={() => signOut()} />
 
   return (
-    <Shell>
-      <Brand />
-      {stage === 'checking' ? (
-        <p className="mt-10 text-mist">Checking your session…</p>
-      ) : (
-        <div className="mt-10 grid gap-5">
-          <h1 className="font-display text-[34px] leading-tight tracking-[-0.03em]">Sign in</h1>
-          <p className="text-[15px] leading-6 text-mist">Use the GitHub account that owns the site. GitHub asks for your password and two-factor code.</p>
-          <Notice tone="error">{error}</Notice>
-          <a
-            href="/api/auth/login"
-            className="inline-flex h-12 items-center justify-center gap-2.5 rounded-[4px] bg-coral px-5 text-[15px] font-medium text-ground transition-colors duration-150 hover:bg-[#f27c5d]"
-          >
-            <GithubIcon size={18} />
-            Sign in with GitHub
-          </a>
+    <div className="flex min-h-svh flex-col bg-white">
+      <header className="px-5 pt-6 md:px-8 md:pt-8">
+        <Brand />
+      </header>
+      <main className="flex flex-1 items-start justify-center px-4 pt-16 pb-12 md:items-center md:pt-0">
+        <div className="w-full max-w-[400px]">
+          {stage === 'checking' ? (
+            <div className="flex flex-col items-center text-center">
+              <FeaturedIcon icon={LoaderCircle} className="[&_svg]:animate-spin" />
+              <p className="mt-4 text-sm text-ut-600">Checking your session…</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col items-center text-center">
+                <FeaturedIcon icon={LockKeyhole} className="size-12 rounded-[10px] [&_svg]:size-6" />
+                <h1 className="mt-6 text-2xl font-semibold tracking-[-0.02em] text-ut-900 md:text-[30px] md:leading-[38px]">Log in to the admin</h1>
+                <p className="mt-2 text-base text-ut-600">Use the GitHub account that owns the site. GitHub asks for your password and two-factor code.</p>
+              </div>
+              {error && <Notice tone="error" className="mt-6">{error}</Notice>}
+              {/* the sign-in runs in Vercel functions (api/), which the Vite dev server doesn't run */}
+              {import.meta.env.DEV && (
+                <Notice className="mt-6">
+                  Sign-in only works on the live site: GitHub hands the key to a Vercel function that doesn’t run on localhost.
+                </Notice>
+              )}
+              <Button asChild variant="outline" size="lg" className="mt-8 w-full">
+                <a href="/api/auth/login">
+                  <GithubIcon size={20} />
+                  Sign in with GitHub
+                </a>
+              </Button>
+            </>
+          )}
         </div>
-      )}
-      <p className="mt-12 flex items-center gap-2 text-[12px] text-dim">
-        <ShieldCheck size={14} strokeWidth={1.75} aria-hidden="true" /> Only the site owner’s GitHub account gets in. Each sign-in lasts{' '}
-        {SESSION_MINUTES} minutes, then the key is revoked.
-      </p>
-    </Shell>
+      </main>
+      <footer className="flex items-start gap-2 px-5 pb-6 text-sm text-ut-600 md:px-8 md:pb-8">
+        <ShieldCheck className="mt-0.5 size-4 shrink-0 text-ut-500" strokeWidth={1.9} aria-hidden="true" />
+        <p>
+          Only the site owner’s GitHub account gets in. Each sign-in lasts {SESSION_MINUTES} minutes, then the key is revoked.
+        </p>
+      </footer>
+    </div>
   )
 }

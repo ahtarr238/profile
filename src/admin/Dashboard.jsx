@@ -1,13 +1,49 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { ArrowDown, ArrowUp, Award, ChartColumn, Clapperboard, ExternalLink, Eye, EyeOff, LogOut, Pencil, Plus, RotateCcw, Trash2, UploadCloud, X } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowUp,
+  Award,
+  ChartColumn,
+  Clapperboard,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  FolderOpen,
+  LogOut,
+  MoreVertical,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Trash2,
+  UploadCloud,
+} from 'lucide-react'
 import { GitHub, UPLOADS_DIR, uploadRepoPath } from './github'
 import { checkVideo, imageToWebp, MAX_VIDEO_MB, pdfToWebp, videoPoster } from './media'
-import { Brand, Btn, Field, Notice } from './ui'
+import { Brand, FeaturedIcon, Field, Notice } from './ui'
 import { friendly } from './errors'
 import StatsPanel from './StatsPanel'
-import { SessionClock, SessionWarning } from './SessionClock'
+import { SessionCard, SessionClock, SessionWarning } from './SessionClock'
 import { useTimeLeft } from './useTimeLeft'
+import { SESSION_MINUTES } from './config'
+import { Avatar, AvatarFallback } from '@/admin/components/ui/avatar'
+import { Badge } from '@/admin/components/ui/badge'
+import { Button } from '@/admin/components/ui/button'
+import { Card } from '@/admin/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/admin/components/ui/dropdown-menu'
+import { Label } from '@/admin/components/ui/label'
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/admin/components/ui/sheet'
+import { Switch } from '@/admin/components/ui/switch'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/admin/components/ui/table'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/admin/components/ui/tooltip'
+import { cn } from '@/admin/lib/utils'
 
 const slugify = (s) =>
   s
@@ -46,37 +82,56 @@ const KINDS = {
 }
 const FILE_FIELDS = ['image', 'video', 'poster']
 
+/** Untitled UI's file uploader: click or drop. The file is prepared in the browser, nothing is sent yet. */
 function FilePick({ label, hint, accept, onPick, preview, kind = 'image' }) {
+  const [over, setOver] = useState(false)
+  const take = (f) => f && onPick(f)
   return (
-    <div>
-      <span className="block text-[13px] text-mist">{label}</span>
-      <div className="mt-1.5 flex flex-wrap items-center gap-4">
-        {preview &&
-          (kind === 'video' ? (
-            <video src={preview} muted playsInline controls className="h-24 rounded-[4px] bg-tile" />
-          ) : (
-            <img src={preview} alt="" className="h-24 rounded-[4px] bg-white object-contain" />
-          ))}
-        <label className="inline-flex h-11 cursor-pointer items-center rounded-[4px] border border-sky-soft/30 px-4 text-[14px] text-sky-soft transition-colors duration-150 hover:border-sky-soft/70">
-          {preview ? 'Replace file' : 'Choose file'}
-          <input
-            type="file"
-            accept={accept}
-            className="sr-only"
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              e.target.value = ''
-              if (f) onPick(f)
-            }}
-          />
-        </label>
-      </div>
-      {hint && <span className="mt-1 block text-[12px] text-dim">{hint}</span>}
+    <div className="grid gap-1.5">
+      <span className="text-sm font-medium text-ut-700">{label}</span>
+      {preview &&
+        (kind === 'video' ? (
+          <video src={preview} muted playsInline controls className="aspect-video w-full rounded-lg border border-ut-200 bg-ut-900 object-contain" />
+        ) : (
+          <img src={preview} alt="" className="max-h-56 w-full rounded-lg border border-ut-200 bg-white object-contain" />
+        ))}
+      <label
+        onDragOver={(e) => {
+          e.preventDefault()
+          setOver(true)
+        }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => {
+          e.preventDefault()
+          setOver(false)
+          take(e.dataTransfer.files?.[0])
+        }}
+        className={cn(
+          'flex cursor-pointer flex-col items-center rounded-xl border bg-white px-6 py-4 text-center transition-[border-color,box-shadow] focus-within:ring-4 focus-within:ring-brand-100 hover:border-brand-300',
+          over ? 'border-brand-600 ring-4 ring-brand-100' : 'border-ut-200',
+        )}
+      >
+        <FeaturedIcon icon={UploadCloud} />
+        <span className="mt-3 text-sm text-ut-600">
+          <span className="font-semibold text-brand-700">{preview ? 'Click to replace' : 'Click to upload'}</span> or drag and drop
+        </span>
+        {hint && <span className="mt-1 text-xs leading-[18px] text-ut-600">{hint}</span>}
+        <input
+          type="file"
+          accept={accept}
+          className="sr-only"
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            e.target.value = ''
+            take(f)
+          }}
+        />
+      </label>
     </div>
   )
 }
 
-/** Add/edit form. Files are prepared here and handed back; nothing reaches GitHub until Publish. */
+/** Add/edit form, in a sheet from the right. Files are prepared here and handed back; nothing reaches GitHub until Publish. */
 function Editor({ kind, row, taken, previewOf, onClose, onDone }) {
   const isNew = !row.id
   const [v, setV] = useState(() => ({ ...row, tagsText: (row.tags || []).join(', '), tagsIdText: (row.tags_id || []).join(', ') }))
@@ -164,106 +219,135 @@ function Editor({ kind, row, taken, previewOf, onClose, onDone }) {
 
   const k = KINDS[kind]
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-ground/80" role="dialog" aria-modal="true" aria-label={`${isNew ? 'Add' : 'Edit'} ${k.one}`}>
-      <form onSubmit={save} className="flex h-full w-full max-w-[560px] flex-col overflow-y-auto border-l border-sky-soft/15 bg-navy-deep p-6 md:p-8">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-[26px] tracking-[-0.02em]">
-            {isNew ? 'Add' : 'Edit'} {k.one}
-          </h2>
-          <Btn kind="plain" onClick={onClose} aria-label="Close" className="px-2">
-            <X size={20} strokeWidth={1.75} aria-hidden="true" />
-          </Btn>
-        </div>
+    <form onSubmit={save} className="flex h-full min-h-0 flex-col">
+      <SheetHeader className="pr-16">
+        <SheetTitle>
+          {isNew ? 'Add' : 'Edit'} {k.one}
+        </SheetTitle>
+        <SheetDescription>Nothing goes live until you press Publish.</SheetDescription>
+      </SheetHeader>
 
-        <div className="mt-6 grid gap-5">
-          <Field id="title" label="Title" required value={v.title} onChange={set('title')} maxLength={160} />
-          <Field
-            id="short"
-            label="Short name"
-            hint="Its id on the site. Lowercase letters, numbers and dashes."
-            value={v.id}
-            maxLength={60}
-            onChange={(e) => {
-              setIdTouched(true)
-              set('id')(e)
-            }}
-          />
+      <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto overscroll-contain px-5 py-6 md:px-6">
+        <Field id="title" label="Title" required value={v.title} onChange={set('title')} maxLength={160} />
+        <Field
+          id="short"
+          label="Short name"
+          hint="Its id on the site. Lowercase letters, numbers and dashes."
+          value={v.id}
+          maxLength={60}
+          onChange={(e) => {
+            setIdTouched(true)
+            set('id')(e)
+          }}
+        />
 
-          {kind === 'certificates' ? (
-            <>
-              <FilePick
-                label="Certificate"
-                hint="Drop the PDF straight from Dicoding or MySkill. The first page becomes the image."
-                accept="application/pdf,image/jpeg,image/png,image/webp"
-                onPick={pickCertificate}
-                preview={files.image?.preview || previewOf(v.image)}
-              />
+        {kind === 'certificates' ? (
+          <>
+            <FilePick
+              label="Certificate"
+              hint="The PDF straight from Dicoding or MySkill. The first page becomes the image."
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              onPick={pickCertificate}
+              preview={files.image?.preview || previewOf(v.image)}
+            />
+            <div className="grid gap-5 sm:grid-cols-2">
               <Field id="issuer" label="Issued by" value={v.issuer} onChange={set('issuer')} maxLength={160} placeholder="Dicoding Indonesia" />
               <Field id="issued_on" label="Date on the certificate" type="date" required value={v.issued_on} onChange={set('issued_on')} />
-              <Field
-                id="verify"
-                label="Verify link (optional)"
-                type="url"
-                placeholder="https://www.dicoding.com/certificates/…"
-                value={v.verify || ''}
-                onChange={set('verify')}
-                error={httpsOnly(v.verify?.trim()) ? '' : 'Must start with https://'}
-              />
-              <Field id="alt" label="Description for screen readers (optional)" value={v.alt} onChange={set('alt')} maxLength={300} />
-            </>
-          ) : (
-            <>
-              <FilePick
-                kind="video"
-                label="Intro video"
-                hint={`MP4 or WebM, up to ${MAX_VIDEO_MB} MB. A cover image is taken from it automatically.`}
-                accept="video/mp4,video/webm"
-                onPick={pickVideo}
-                preview={files.video?.preview || previewOf(v.video)}
-              />
-              <FilePick
-                label="Cover image (optional)"
-                hint="Shown before the video plays."
-                accept="image/jpeg,image/png,image/webp"
-                onPick={pickPoster}
-                preview={files.poster?.preview || previewOf(v.poster)}
-              />
-              <Field id="description" as="textarea" label="Description" value={v.description} onChange={set('description')} maxLength={1200} />
-              <Field id="tags" label="Tags" hint="Comma separated, up to 8." value={v.tagsText} onChange={set('tagsText')} />
-              <Field id="role" label="Your role (optional)" hint="Shows as a badge, e.g. Contributor." value={v.role || ''} onChange={set('role')} maxLength={40} />
+            </div>
+            <Field
+              id="verify"
+              label="Verify link (optional)"
+              type="url"
+              placeholder="https://www.dicoding.com/certificates/…"
+              value={v.verify || ''}
+              onChange={set('verify')}
+              error={httpsOnly(v.verify?.trim()) ? '' : 'Must start with https://'}
+            />
+            <Field id="alt" label="Description for screen readers (optional)" value={v.alt} onChange={set('alt')} maxLength={300} />
+          </>
+        ) : (
+          <>
+            <FilePick
+              kind="video"
+              label="Intro video"
+              hint={`MP4 or WebM, up to ${MAX_VIDEO_MB} MB. A cover image is taken from it automatically.`}
+              accept="video/mp4,video/webm"
+              onPick={pickVideo}
+              preview={files.video?.preview || previewOf(v.video)}
+            />
+            <FilePick
+              label="Cover image (optional)"
+              hint="JPG, PNG or WebP. Shown before the video plays."
+              accept="image/jpeg,image/png,image/webp"
+              onPick={pickPoster}
+              preview={files.poster?.preview || previewOf(v.poster)}
+            />
+            <Field id="description" as="textarea" label="Description" value={v.description} onChange={set('description')} maxLength={1200} />
+            <Field id="tags" label="Tags" hint="Comma separated, up to 8." value={v.tagsText} onChange={set('tagsText')} />
+            <Field id="role" label="Your role (optional)" hint="Shows as a badge, e.g. Contributor." value={v.role || ''} onChange={set('role')} maxLength={40} />
 
-              {/* shown to visitors who switch the site to Bahasa Indonesia */}
-              <fieldset className="grid gap-5 rounded-[6px] border border-sky-soft/15 p-4">
-                <legend className="px-1 text-[13px] text-sky-soft">Bahasa Indonesia (optional)</legend>
-                <p className="-mt-2 text-[12px] text-dim">Leave any of these empty and visitors reading in Indonesian see the English text instead.</p>
-                <Field id="title_id" label="Judul" value={v.title_id || ''} onChange={set('title_id')} maxLength={160} />
-                <Field id="description_id" as="textarea" label="Deskripsi" value={v.description_id || ''} onChange={set('description_id')} maxLength={1200} />
-                <Field id="tags_id" label="Tag" hint="Pisahkan dengan koma, maksimal 8." value={v.tagsIdText} onChange={set('tagsIdText')} />
-              </fieldset>
-            </>
-          )}
+            {/* shown to visitors who switch the site to Bahasa Indonesia */}
+            <fieldset className="grid gap-5 rounded-xl border border-ut-200 bg-ut-25 p-4 md:p-5">
+              <legend className="-ml-1 px-1 text-sm font-semibold text-ut-900">Bahasa Indonesia (optional)</legend>
+              <p className="-mt-2 text-sm text-ut-600">Leave any of these empty and visitors reading in Indonesian see the English text instead.</p>
+              <Field id="title_id" label="Judul" value={v.title_id || ''} onChange={set('title_id')} maxLength={160} />
+              <Field id="description_id" as="textarea" label="Deskripsi" value={v.description_id || ''} onChange={set('description_id')} maxLength={1200} />
+              <Field id="tags_id" label="Tag" hint="Pisahkan dengan koma, maksimal 8." value={v.tagsIdText} onChange={set('tagsIdText')} />
+            </fieldset>
+          </>
+        )}
 
-          <label className="flex items-center gap-3 text-[15px]">
-            <input type="checkbox" checked={!!v.published} onChange={set('published')} className="size-4 accent-coral" />
-            Show on the site
-          </label>
-        </div>
-
-        <div className="mt-auto pt-8">
-          {busy && <Notice>{busy}</Notice>}
-          {error && <Notice tone="error">{error}</Notice>}
-          <div className="mt-4 flex gap-3">
-            <Btn type="submit" disabled={!!busy} className="flex-1">
-              {isNew ? `Add ${k.one}` : 'Keep changes'}
-            </Btn>
-            <Btn kind="ghost" onClick={onClose} disabled={!!busy}>
-              Cancel
-            </Btn>
+        <div className="flex items-start gap-3 rounded-xl border border-ut-200 p-4">
+          <Switch id="published" checked={!!v.published} onCheckedChange={(on) => setV((o) => ({ ...o, published: on }))} className="mt-0.5" />
+          <div className="grid gap-0.5">
+            <Label htmlFor="published" className="text-ut-700">
+              Show on the site
+            </Label>
+            <p className="text-sm text-ut-600">Hidden items stay in the list here but never ship to visitors.</p>
           </div>
-          <p className="mt-3 text-[12px] text-dim">Nothing goes live until you press Publish.</p>
         </div>
-      </form>
-    </div>
+      </div>
+
+      <SheetFooter>
+        {busy && <Notice>{busy}</Notice>}
+        {error && <Notice tone="error">{error}</Notice>}
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={onClose} disabled={!!busy} className="flex-1 sm:flex-none">
+            Cancel
+          </Button>
+          <Button type="submit" disabled={!!busy} className="flex-1">
+            {isNew ? `Add ${k.one}` : 'Keep changes'}
+          </Button>
+        </div>
+      </SheetFooter>
+    </form>
+  )
+}
+
+function IconBtn({ label, icon: Icon, danger = false, ...props }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label={label} className={cn('text-ut-500', danger && 'hover:bg-[#fef3f2] hover:text-[#b42318]')} {...props}>
+          <Icon strokeWidth={1.9} aria-hidden="true" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  )
+}
+
+function Status({ published }) {
+  return published ? (
+    <Badge variant="success">
+      <span aria-hidden="true" className="size-1.5 rounded-full bg-[#17b26a]" />
+      Live
+    </Badge>
+  ) : (
+    <Badge variant="secondary">
+      <span aria-hidden="true" className="size-1.5 rounded-full bg-ut-400" />
+      Hidden
+    </Badge>
   )
 }
 
@@ -276,7 +360,9 @@ export default function Dashboard({ session, onSignOut }) {
   const [staged, setStaged] = useState({}) // repo path -> { blob, preview }
   const [removed, setRemoved] = useState([]) // repo paths
   const [log, setLog] = useState([]) // plain-language list of changes, becomes the commit message
-  const [editing, setEditing] = useState(null)
+  const [editing, setEditing] = useState(null) // the row in the sheet; kept while it slides away
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [editKey, setEditKey] = useState(0)
   const [confirm, setConfirm] = useState(null)
   const [status, setStatus] = useState({ tone: 'info', text: 'Loading…' })
   const [publishing, setPublishing] = useState(false)
@@ -329,6 +415,13 @@ export default function Dashboard({ session, onSignOut }) {
   }, [draft, tab])
   const k = KINDS[tab]
 
+  const openEditor = (row) => {
+    setEditing(row)
+    setEditKey((n) => n + 1)
+    setSheetOpen(true)
+  }
+  const closeEditor = () => setSheetOpen(false)
+
   // a file leaving the site: forget it if it was only staged, delete it from the repo if it was an upload
   const dropFile = (sitePath) => {
     const repoPath = uploadRepoPath(sitePath)
@@ -365,7 +458,7 @@ export default function Dashboard({ session, onSignOut }) {
     }
     if (old.id) change(`Edit ${k.one} "${next.title}"`, (list) => list.splice(list.findIndex((r) => r.id === old.id), 1, next))
     else change(`Add ${k.one} "${next.title}"`, (list) => list.push(next))
-    setEditing(null)
+    closeEditor()
   }
 
   const togglePublished = (r) =>
@@ -405,7 +498,7 @@ export default function Dashboard({ session, onSignOut }) {
         message: `Admin: ${unique.length === 1 ? unique[0] : `${unique.length} changes`}\n\n${unique.map((t) => `- ${t}`).join('\n')}`,
       })
       await load()
-      setStatus({ tone: 'info', text: 'Published. The site updates in about a minute, once Vercel finishes the new build.' })
+      setStatus({ tone: 'success', text: 'Published. The site updates in about a minute, once Vercel finishes the new build.' })
     } catch (e) {
       setStatus({ tone: 'error', text: friendly(e) })
     }
@@ -420,226 +513,306 @@ export default function Dashboard({ session, onSignOut }) {
     { key: 'certificates', label: 'Certificates', icon: Award },
   ]
   const current = tabs.find((x) => x.key === tab)
+  const initials = (session.login || 'a').slice(0, 2).toUpperCase()
 
-  return (
-    <div className="min-h-svh bg-ground text-sky-soft md:grid md:grid-cols-[240px_minmax(0,1fr)]">
-      {/* desktop: a quiet sidebar with the sections and the account */}
-      <aside className="sticky top-0 hidden h-svh flex-col border-r border-sky-soft/10 bg-navy-deep/40 px-4 py-6 md:flex">
-        <div className="px-2">
-          <Brand />
-        </div>
-        <nav className="mt-10 grid gap-1" aria-label="Sections">
-          {tabs.map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              type="button"
-              aria-current={tab === key ? 'page' : undefined}
-              onClick={() => setTab(key)}
-              className={`flex h-11 items-center gap-3 rounded-[6px] px-3 text-[14px] transition-colors duration-150 ${
-                tab === key ? 'bg-navy-raised text-sky-soft' : 'text-mist hover:bg-sky-soft/5 hover:text-sky-soft'
-              }`}
-            >
-              <Icon size={17} strokeWidth={1.75} className={tab === key ? 'text-coral' : ''} aria-hidden="true" />
-              {label}
-              {counts[key] != null && <span className="ml-auto text-[12px] text-dim tabular-nums">{counts[key]}</span>}
-            </button>
-          ))}
-        </nav>
-
-        <div className="mt-auto grid gap-3 border-t border-sky-soft/10 px-2 pt-5 text-[13px]">
-          <div className="min-w-0">
-            <p className="truncate text-sky-soft">{session.login}</p>
-            <p className="truncate text-[12px] text-dim">{session.repo}</p>
-          </div>
-          <p className="text-mist">
-            <SessionClock left={timeLeft} /> <span className="text-dim">left</span>
-          </p>
-          <div className="-mx-2 grid gap-1">
-            <a href="/" target="_blank" rel="noreferrer" className="flex h-10 items-center gap-2.5 rounded-[6px] px-2 text-mist hover:bg-sky-soft/5 hover:text-sky-soft">
-              <ExternalLink size={15} strokeWidth={1.75} aria-hidden="true" /> View site
-            </a>
-            <button type="button" onClick={onSignOut} className="flex h-10 items-center gap-2.5 rounded-[6px] px-2 text-mist hover:bg-sky-soft/5 hover:text-coral">
-              <LogOut size={15} strokeWidth={1.75} aria-hidden="true" /> Sign out
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* phones: a slim bar on top and the three sections as a switch under it */}
-      <header className="sticky top-0 z-40 border-b border-sky-soft/10 bg-ground px-4 pt-3 pb-3 md:hidden">
-        <div className="flex items-center justify-between gap-3">
-          <Brand />
-          <div className="flex items-center gap-1 text-[13px] text-mist">
-            <SessionClock left={timeLeft} />
-            <a href="/" target="_blank" rel="noreferrer" aria-label="View site" className="grid size-10 place-items-center rounded-[6px] hover:text-sky-soft">
-              <ExternalLink size={17} strokeWidth={1.75} aria-hidden="true" />
-            </a>
-            <button type="button" onClick={onSignOut} aria-label="Sign out" className="-mr-2 grid size-10 place-items-center rounded-[6px] hover:text-coral">
-              <LogOut size={17} strokeWidth={1.75} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-        <nav className="mt-3 grid grid-cols-3 gap-1 rounded-[8px] bg-tile p-1" aria-label="Sections">
-          {tabs.map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              type="button"
-              aria-current={tab === key ? 'page' : undefined}
-              onClick={() => setTab(key)}
-              className={`flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-[6px] px-1 text-[13px] transition-colors duration-150 ${
-                tab === key ? 'bg-navy-raised text-sky-soft' : 'text-mist'
-              }`}
-            >
-              <Icon size={15} strokeWidth={1.75} className={`shrink-0 ${tab === key ? 'text-coral' : ''}`} aria-hidden="true" />
-              <span className="truncate">{label}</span>
-            </button>
-          ))}
-        </nav>
-      </header>
-
-      <main className={`mx-auto w-full max-w-[1180px] min-w-0 px-4 pt-6 md:px-10 md:pt-10 ${dirty ? 'pb-32' : 'pb-16'}`}>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="font-display text-[34px] leading-none tracking-[-0.03em] md:text-[44px]">{current.label}</h1>
-            <p className="mt-2 text-[14px] text-mist">
-              {tab === 'visitors'
-                ? 'Who came by, from where, and what they did.'
-                : `${counts[tab] ?? 0} in total. Changes stay here until you publish them.`}
-            </p>
-          </div>
-          {k && (
-            <Btn onClick={() => setEditing(k.blank())} disabled={!draft} className="max-sm:w-full">
-              <Plus size={16} strokeWidth={2} aria-hidden="true" /> Add {k.one}
-            </Btn>
-          )}
-        </div>
-
-        <SessionWarning left={timeLeft} dirty={dirty} />
-        {status && (
-          <div className="mt-5">
-            <Notice tone={status.tone}>{status.text}</Notice>
-          </div>
-        )}
-
-        <div className="mt-6 md:mt-8">
-          {tab === 'visitors' && <StatsPanel token={session.token} />}
-          {k && draft && rows.length === 0 && (
-            <p className="rounded-[10px] border border-dashed border-sky-soft/15 px-5 py-12 text-center text-mist">Nothing here yet. Add the first {k.one}.</p>
-          )}
-          {k && rows.length > 0 && (
-            <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {rows.map((r, i) => (
-                <li key={r.id} className="flex min-w-0 flex-col overflow-hidden rounded-[10px] border border-sky-soft/10 bg-tile">
-                  <div className={`relative aspect-video ${tab === 'certificates' ? 'bg-white' : 'bg-navy-deep'}`}>
-                    {k.thumb(r) && (
-                      <img
-                        src={previewOf(k.thumb(r))}
-                        alt=""
-                        loading="lazy"
-                        className={`size-full ${tab === 'certificates' ? 'object-contain p-2' : 'object-cover'} ${r.published ? '' : 'opacity-40'}`}
-                      />
-                    )}
-                    <div className="absolute top-2 left-2 flex gap-1.5">
-                      {tab === 'projects' && (
-                        <span className="rounded-[4px] bg-ground/85 px-2 py-1 text-[12px] text-sky-soft tabular-nums">{String(i + 1).padStart(2, '0')}</span>
-                      )}
-                      {!r.published && <span className="rounded-[4px] bg-ground/85 px-2 py-1 text-[12px] text-mist">Hidden</span>}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-1 flex-col p-4">
-                    <p className="line-clamp-2 text-[15px] leading-snug text-sky-soft">{r.title}</p>
-                    <p className="mt-1 truncate text-[13px] text-dim">{k.meta(r) || '—'}</p>
-                  </div>
-
-                  <div className="flex h-12 items-center gap-0.5 border-t border-sky-soft/10 px-1.5">
-                    {confirm === r.id ? (
-                      <div className="flex w-full items-center justify-between gap-2 pl-2 text-[13px]">
-                        <span className="truncate text-coral">Delete this {k.one}?</span>
-                        <span className="flex shrink-0 gap-1">
-                          <Btn kind="plain" className="h-9 px-3" onClick={() => setConfirm(null)}>
-                            Keep
-                          </Btn>
-                          <Btn kind="danger" className="h-9 px-3" onClick={() => remove(r)}>
-                            Delete
-                          </Btn>
-                        </span>
-                      </div>
-                    ) : (
-                      <>
-                        {tab === 'projects' && (
-                          <>
-                            <IconBtn label="Move up" disabled={i === 0} onClick={() => move(i, -1)} icon={ArrowUp} />
-                            <IconBtn label="Move down" disabled={i === rows.length - 1} onClick={() => move(i, 1)} icon={ArrowDown} />
-                          </>
-                        )}
-                        <span className="flex-1" />
-                        <IconBtn label={r.published ? 'Hide from site' : 'Show on site'} onClick={() => togglePublished(r)} icon={r.published ? Eye : EyeOff} />
-                        <IconBtn label={`Edit ${r.title}`} onClick={() => setEditing(r)} icon={Pencil} />
-                        <IconBtn label={`Delete ${r.title}`} onClick={() => setConfirm(r.id)} icon={Trash2} danger />
-                      </>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {k && (
-            <p className="mt-10 text-[12px] text-dim">
-              Uploaded files go to <code>{UPLOADS_DIR}/</code> in the repo. Every publish is a commit, so any change can be undone from GitHub’s history.
-            </p>
-          )}
-        </div>
-      </main>
-
-      {/* unpublished changes: a bar that rises from the bottom and stays until you publish or discard */}
-      <AnimatePresence>
-        {dirty && (
-          <motion.div
-            initial={{ y: 24, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 24, opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-[640px] items-center justify-between gap-3 rounded-[10px] border border-coral/40 bg-navy-deep py-2 pr-2 pl-4 shadow-[0_18px_48px_rgb(0_0_0/0.5)] md:left-[264px]"
-          >
-            <p className="flex min-w-0 items-center gap-2.5 text-[14px]">
-              <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-coral" />
-              <span className="truncate">
-                {log.length} <span className="max-sm:hidden">unpublished </span>change{log.length === 1 ? '' : 's'}
-              </span>
-            </p>
-            <div className="flex shrink-0 gap-1.5">
-              <Btn kind="plain" onClick={discard} disabled={publishing} className="px-3" aria-label="Discard changes">
-                <RotateCcw size={15} strokeWidth={1.75} aria-hidden="true" /> <span className="max-sm:hidden">Discard</span>
-              </Btn>
-              <Btn onClick={publish} disabled={publishing}>
-                <UploadCloud size={16} strokeWidth={1.75} aria-hidden="true" /> {publishing ? 'Publishing…' : 'Publish'}
-              </Btn>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {editing && (
-        <Editor kind={tab} row={editing} taken={taken} previewOf={previewOf} onClose={() => setEditing(null)} onDone={onEdited} />
+  const thumb = (r, className) => (
+    <span
+      className={cn(
+        'relative block aspect-video shrink-0 overflow-hidden rounded-md border border-ut-200',
+        tab === 'certificates' ? 'bg-white' : 'bg-ut-100',
+        className,
       )}
-    </div>
-  )
-}
-
-function IconBtn({ label, icon: Icon, danger = false, ...props }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      className={`grid size-10 place-items-center rounded-[6px] text-mist transition-colors duration-150 hover:bg-sky-soft/5 disabled:pointer-events-none disabled:opacity-30 ${
-        danger ? 'hover:text-coral' : 'hover:text-sky-soft'
-      }`}
-      {...props}
     >
-      <Icon size={16} strokeWidth={1.75} aria-hidden="true" />
+      {k.thumb(r) && (
+        <img
+          src={previewOf(k.thumb(r))}
+          alt=""
+          loading="lazy"
+          className={cn('size-full', tab === 'certificates' ? 'object-contain p-1' : 'object-cover', !r.published && 'opacity-50 grayscale')}
+        />
+      )}
+    </span>
+  )
+
+  const actions = (r, i) =>
+    confirm === r.id ? (
+      <div className="flex items-center justify-end gap-2">
+        <span className="mr-1 text-sm font-medium text-[#b42318]">Delete?</span>
+        <Button variant="outline" size="sm" onClick={() => setConfirm(null)}>
+          Keep
+        </Button>
+        <Button variant="destructive" size="sm" onClick={() => remove(r)}>
+          Delete
+        </Button>
+      </div>
+    ) : (
+      <div className="flex items-center justify-end gap-0.5">
+        {tab === 'projects' && (
+          <>
+            <IconBtn label="Move up" disabled={i === 0} onClick={() => move(i, -1)} icon={ArrowUp} />
+            <IconBtn label="Move down" disabled={i === rows.length - 1} onClick={() => move(i, 1)} icon={ArrowDown} />
+          </>
+        )}
+        <IconBtn label={r.published ? 'Hide from site' : 'Show on site'} onClick={() => togglePublished(r)} icon={r.published ? Eye : EyeOff} />
+        <IconBtn label={`Edit ${r.title}`} onClick={() => openEditor(r)} icon={Pencil} />
+        <IconBtn label={`Delete ${r.title}`} onClick={() => setConfirm(r.id)} icon={Trash2} danger />
+      </div>
+    )
+
+  const navItem = ({ key, label, icon: Icon }) => (
+    <button
+      key={key}
+      type="button"
+      aria-current={tab === key ? 'page' : undefined}
+      onClick={() => setTab(key)}
+      className={cn(
+        'flex h-10 w-full items-center gap-3 rounded-md px-3 text-[15px] font-semibold transition-colors duration-100 focus-visible:ring-4 focus-visible:ring-brand-100 focus-visible:outline-none',
+        tab === key ? 'bg-ut-50 text-ut-800' : 'text-ut-700 hover:bg-ut-50 hover:text-ut-800',
+      )}
+    >
+      <Icon className={cn('size-5', tab === key ? 'text-ut-700' : 'text-ut-500')} strokeWidth={1.9} aria-hidden="true" />
+      {label}
+      {counts[key] != null && <span className="ml-auto rounded-full border border-ut-200 bg-ut-50 px-2 py-0.5 text-xs font-medium text-ut-700 tabular-nums">{counts[key]}</span>}
     </button>
+  )
+
+  return (
+    <TooltipProvider delayDuration={300}>
+      <div className="min-h-svh bg-white text-ut-900 md:grid md:grid-cols-[280px_minmax(0,1fr)]">
+        {/* desktop: Untitled UI's sidebar — brand, sections, the session card, the account */}
+        <aside className="sticky top-0 hidden h-svh flex-col border-r border-ut-200 bg-white px-4 pt-8 pb-6 md:flex">
+          <div className="px-2">
+            <Brand />
+          </div>
+          <nav className="mt-6 grid gap-1" aria-label="Sections">
+            {tabs.map(navItem)}
+          </nav>
+
+          <div className="mt-auto grid gap-6">
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex h-10 items-center gap-3 rounded-md px-3 text-[15px] font-semibold text-ut-700 hover:bg-ut-50 hover:text-ut-800"
+            >
+              <ExternalLink className="size-5 text-ut-500" strokeWidth={1.9} aria-hidden="true" /> View site
+            </a>
+            <SessionCard left={timeLeft} total={SESSION_MINUTES * 60e3} />
+            <div className="flex items-center gap-3 border-t border-ut-200 px-2 pt-6">
+              <Avatar className="size-10 border border-ut-200">
+                <AvatarFallback className="bg-ut-100 text-sm font-semibold text-ut-600">{initials}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1 text-sm">
+                <p className="truncate font-semibold text-ut-700">{session.login}</p>
+                <p className="truncate text-ut-600">{session.repo}</p>
+              </div>
+              <IconBtn label="Sign out" onClick={onSignOut} icon={LogOut} />
+            </div>
+          </div>
+        </aside>
+
+        {/* phones: a slim bar with a menu, and the sections as underlined tabs */}
+        <header className="sticky top-0 z-40 border-b border-ut-200 bg-white/95 backdrop-blur md:hidden">
+          <div className="flex h-16 items-center justify-between gap-3 px-4">
+            <Brand />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Account menu" className="-mr-2">
+                  <MoreVertical className="size-5" strokeWidth={1.9} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60">
+                <DropdownMenuLabel className="font-normal">
+                  <p className="text-sm font-semibold text-ut-900">{session.login}</p>
+                  <p className="mt-0.5 text-sm text-ut-600">
+                    <SessionClock left={timeLeft} /> left in this session
+                  </p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <a href="/" target="_blank" rel="noreferrer">
+                    <ExternalLink /> View site
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={onSignOut}>
+                  <LogOut /> Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <nav className="flex gap-4 overflow-x-auto px-4" aria-label="Sections">
+            {tabs.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                aria-current={tab === key ? 'page' : undefined}
+                onClick={() => setTab(key)}
+                className={cn(
+                  'relative flex h-11 shrink-0 items-center gap-2 px-1 text-sm font-semibold transition-colors',
+                  tab === key ? 'text-brand-700' : 'text-ut-500 hover:text-ut-700',
+                )}
+              >
+                {label}
+                {counts[key] != null && (
+                  <span className={cn('rounded-full border px-2 py-px text-xs font-medium tabular-nums', tab === key ? 'border-brand-200 bg-brand-50 text-brand-700' : 'border-ut-200 bg-ut-50 text-ut-700')}>
+                    {counts[key]}
+                  </span>
+                )}
+                {tab === key && <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-0.5 bg-brand-600" />}
+              </button>
+            ))}
+          </nav>
+        </header>
+
+        <main className={cn('mx-auto w-full max-w-[1216px] min-w-0 px-4 pt-6 md:px-8 md:pt-8', dirty ? 'pb-32' : 'pb-16')}>
+          {/* page header */}
+          <div className="flex flex-col gap-4 border-b border-ut-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-[-0.02em] text-ut-900 md:text-[30px] md:leading-[38px]">{current.label}</h1>
+              <p className="mt-1 text-base text-ut-600">
+                {tab === 'visitors'
+                  ? 'Who came by, from where, and what they did. Counted without cookies.'
+                  : `${counts[tab] ?? 0} in total. Changes stay here until you publish them.`}
+              </p>
+            </div>
+            {k && (
+              <Button onClick={() => openEditor(k.blank())} disabled={!draft} className="max-sm:w-full">
+                <Plus className="size-5" strokeWidth={2} aria-hidden="true" /> Add {k.one}
+              </Button>
+            )}
+          </div>
+
+          <SessionWarning left={timeLeft} dirty={dirty} />
+          {status && <Notice tone={status.tone} className="mt-6">{status.text}</Notice>}
+
+          <div className="mt-6 md:mt-8">
+            {tab === 'visitors' && <StatsPanel token={session.token} />}
+
+            {k && draft && rows.length === 0 && (
+              <div className="flex flex-col items-center rounded-xl border border-ut-200 px-6 py-16 text-center shadow-xs">
+                <FeaturedIcon icon={FolderOpen} className="size-12 [&_svg]:size-6" />
+                <p className="mt-4 text-base font-semibold text-ut-900">No {k.label.toLowerCase()} yet</p>
+                <p className="mt-1 text-sm text-ut-600">Add the first {k.one} and publish it when you’re ready.</p>
+                <Button className="mt-6" onClick={() => openEditor(k.blank())}>
+                  <Plus className="size-5" strokeWidth={2} aria-hidden="true" /> Add {k.one}
+                </Button>
+              </div>
+            )}
+
+            {k && rows.length > 0 && (
+              <Card className="gap-0 overflow-hidden py-0">
+                <div className="flex items-center gap-2 px-4 py-5 md:px-6">
+                  <h2 className="text-lg font-semibold text-ut-900">All {k.label.toLowerCase()}</h2>
+                  <Badge variant="default">{rows.length}</Badge>
+                </div>
+
+                {/* wide screens: Untitled UI's table */}
+                <Table className="hidden md:table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-full xl:w-[46%]">{tab === 'projects' ? 'Project' : 'Certificate'}</TableHead>
+                      <TableHead className="hidden xl:table-cell">{tab === 'projects' ? 'Role and tags' : 'Issuer and date'}</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">
+                        <span className="sr-only">Actions</span>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((r, i) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="max-w-0">
+                          <div className="flex items-center gap-3">
+                            {thumb(r, 'w-20')}
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-ut-900">
+                                {tab === 'projects' && <span className="mr-1.5 text-ut-500 tabular-nums">{String(i + 1).padStart(2, '0')}</span>}
+                                {r.title}
+                              </p>
+                              <p className="truncate text-sm text-ut-600 xl:hidden">{k.meta(r) || '—'}</p>
+                              <p className="hidden truncate text-sm text-ut-600 xl:block">{r.id}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden max-w-[260px] truncate text-sm xl:table-cell">{k.meta(r) || '—'}</TableCell>
+                        <TableCell>
+                          <Status published={r.published} />
+                        </TableCell>
+                        <TableCell className="text-right">{actions(r, i)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {/* phones: the same rows, stacked */}
+                <ul className="divide-y divide-ut-200 border-t border-ut-200 md:hidden">
+                  {rows.map((r, i) => (
+                    <li key={r.id} className="px-4 py-4">
+                      <div className="flex gap-3">
+                        {thumb(r, 'w-24')}
+                        <div className="min-w-0 flex-1">
+                          <p className="line-clamp-2 text-sm font-medium text-ut-900">{r.title}</p>
+                          <p className="mt-0.5 truncate text-sm text-ut-600">{k.meta(r) || '—'}</p>
+                          <div className="mt-2">
+                            <Status published={r.published} />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 -mr-2">{actions(r, i)}</div>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
+
+            {k && (
+              <p className="mt-6 text-sm text-ut-600">
+                Uploaded files go to <code className="rounded bg-ut-100 px-1.5 py-0.5 text-[13px] text-ut-700">{UPLOADS_DIR}/</code> in the repo. Every publish is a commit,
+                so any change can be undone from GitHub’s history.
+              </p>
+            )}
+          </div>
+        </main>
+
+        {/* unpublished changes: a floating bar that stays until you publish or discard */}
+        <AnimatePresence>
+          {dirty && (
+            <motion.div
+              initial={{ y: 24, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 24, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-[640px] items-center justify-between gap-3 rounded-xl border border-ut-200 bg-white py-3 pr-3 pl-4 shadow-[0_12px_16px_-4px_rgb(16_24_40/0.08),0_4px_6px_-2px_rgb(16_24_40/0.03)] md:left-[280px]"
+            >
+              <p className="flex min-w-0 items-center gap-2.5 text-sm font-semibold text-ut-700">
+                <span aria-hidden="true" className="relative flex size-2.5 shrink-0">
+                  <span className="absolute inset-0 rounded-full bg-brand-500" />
+                  <span className="absolute -inset-1 rounded-full bg-brand-500/20" />
+                </span>
+                <span className="truncate">
+                  {log.length} <span className="max-sm:hidden">unpublished </span>change{log.length === 1 ? '' : 's'}
+                </span>
+              </p>
+              <div className="flex shrink-0 gap-2">
+                <Button variant="outline" onClick={discard} disabled={publishing} aria-label="Discard changes">
+                  <RotateCcw strokeWidth={1.9} aria-hidden="true" /> <span className="max-sm:hidden">Discard</span>
+                </Button>
+                <Button onClick={publish} disabled={publishing}>
+                  <UploadCloud strokeWidth={1.9} aria-hidden="true" /> {publishing ? 'Publishing…' : 'Publish'}
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <Sheet open={sheetOpen} onOpenChange={(open) => !open && closeEditor()}>
+          <SheetContent showCloseButton className="p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
+            {editing && (
+              <Editor key={editKey} kind={tab} row={editing} taken={taken} previewOf={previewOf} onClose={closeEditor} onDone={onEdited} />
+            )}
+          </SheetContent>
+        </Sheet>
+      </div>
+    </TooltipProvider>
   )
 }

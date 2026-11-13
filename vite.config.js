@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
+import { fileURLToPath } from 'node:url'
 
 // Hidden items (published: false) are dropped before cms.json is bundled, so they never ship
 // in the site's JavaScript. (They are still in the repo itself: see docs/admin-setup.md.)
@@ -57,6 +58,8 @@ function seoFiles() {
 
 export default defineConfig({
   plugins: [publishedOnly(), seoFiles(), react(), tailwindcss()],
+  // @/ is src/ (the admin's shadcn components import through it)
+  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   // Inline PostCSS config so Vite doesn't pick up a postcss.config from a parent folder.
   // Tailwind v4 runs through its Vite plugin above.
   css: { postcss: { plugins: [] } },
