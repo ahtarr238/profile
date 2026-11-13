@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useInView } from 'motion/react'
 import { ArrowUpRight, Maximize2, X } from 'lucide-react'
 import { certificates } from '../data/content'
 import { useLenisInstance } from '../hooks/useLenis'
+import { useMedia } from '../hooks/useMedia'
 import Tag from './Tag'
 import RevealText from './RevealText'
 import { trackEvent } from '../lib/track'
@@ -125,6 +126,91 @@ function Featured({ cert, onOpen, hidden }) {
   )
 }
 
+/**
+ * Phones: the whole list as one row of cards you swipe through, so the section stays one card
+ * tall however many certificates there are. Native scroll snapping does the swiping; a tap opens
+ * the certificate full size.
+ */
+function PhoneStrip({ open, onOpen }) {
+  const { t, date } = useLang()
+  const rowRef = useRef(null)
+  const [at, setAt] = useState(0)
+  const count = certificates.length
+
+  const onScroll = () => {
+    const row = rowRef.current
+    const first = row?.firstElementChild
+    if (!first) return
+    const step = first.getBoundingClientRect().width + 12 // card + gap-3
+    setAt(Math.min(count - 1, Math.max(0, Math.round(row.scrollLeft / step))))
+  }
+
+  return (
+    <div className="mt-8">
+      <ol
+        ref={rowRef}
+        onScroll={onScroll}
+        className="-mx-6 flex snap-x snap-mandatory scroll-px-6 gap-3 overflow-x-auto px-6 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {certificates.map((c, i) => (
+          <li key={c.id} className="w-[84%] shrink-0 snap-start">
+            <button
+              type="button"
+              onClick={() => onOpen(c)}
+              aria-label={t('certs.openNamed', { title: c.title })}
+              className="block w-full text-left"
+            >
+              <span className="block rounded-[10px] bg-white p-2">
+                <span className="relative block aspect-[16/11] overflow-hidden rounded-[6px] bg-white">
+                  {open?.id !== c.id && (
+                    <motion.img
+                      layoutId={`cert-${c.id}`}
+                      src={c.image}
+                      alt=""
+                      loading={i < 2 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      className="absolute inset-0 size-full object-contain"
+                      transition={{ duration: 0.45, ease }}
+                    />
+                  )}
+                </span>
+              </span>
+              <span className="mt-3 flex items-start gap-3">
+                <span className={`font-display pt-0.5 text-[13px] tabular-nums ${i === at ? 'text-coral' : 'text-dim'}`}>
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="min-w-0">
+                  <span className="font-display block text-[18px] leading-[1.2] text-sky-soft">{c.title}</span>
+                  <span className="mt-1 block text-[13px] text-mist">
+                    {c.issuer}
+                    <span className="text-dim tabular-nums"> · {date(c.issuedOn)}</span>
+                  </span>
+                </span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ol>
+
+      {/* where you are in the row */}
+      <div className="mt-5 flex items-center gap-4">
+        <span className="font-display text-[14px] text-sky-soft tabular-nums">
+          {String(at + 1).padStart(2, '0')} <span className="text-dim">/ {String(count).padStart(2, '0')}</span>
+        </span>
+        <span className="relative h-px flex-1 bg-sky-soft/15">
+          <motion.span
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 bg-coral"
+            animate={{ width: `${((at + 1) / count) * 100}%` }}
+            transition={{ duration: 0.35, ease }}
+          />
+        </span>
+        <span className="text-[12px] text-dim">{t('certs.swipe')}</span>
+      </div>
+    </div>
+  )
+}
+
 export default function Certificates() {
   const { t, date } = useLang()
   const count = certificates.length
@@ -134,13 +220,14 @@ export default function Certificates() {
   const close = useCallback(() => setOpen(null), [])
   const sectionRef = useRef(null)
   const onScreen = useInView(sectionRef, { amount: 0.4 })
+  const phone = useMedia('(max-width: 767px)')
 
-  // moves on by itself while on screen, until someone picks a certificate
+  // moves on by itself while on screen, until someone picks a certificate (wide screens only)
   useEffect(() => {
-    if (touched || !onScreen || open || count < 2) return
+    if (phone || touched || !onScreen || open || count < 2) return
     const t = setInterval(() => setActive((i) => (i + 1) % count), AUTO_MS)
     return () => clearInterval(t)
-  }, [touched, onScreen, open, count])
+  }, [phone, touched, onScreen, open, count])
 
   const pick = (i) => {
     setTouched(true)
@@ -168,6 +255,9 @@ export default function Certificates() {
           ))}
         </ul>
 
+        {phone ? (
+          <PhoneStrip open={open} onOpen={setOpen} />
+        ) : (
         <div className="mt-10 grid gap-8 md:mt-16 md:grid-cols-12 md:items-center md:gap-14">
           <motion.div
             initial={{ opacity: 0, y: 28 }}
@@ -254,6 +344,7 @@ export default function Certificates() {
             </li>
           </ol>
         </div>
+        )}
       </div>
 
       <Lightbox cert={open} onClose={close} />
