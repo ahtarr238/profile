@@ -158,9 +158,9 @@ export default function DropBy() {
   return (
     <section id="drop-by" ref={ref} className="relative overflow-clip">
       <div className="relative mx-auto max-w-[1320px] px-6 md:px-10 md:pt-16">
-        <RevealText text={t('guestbook.title')} accent="." className="font-display text-[clamp(56px,12vw,180px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft" />
+        <RevealText text={t('guestbook.title')} accent="." className="font-display text-[clamp(52px,9vw,136px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft md:text-center" />
 
-        <div className="mt-10 grid gap-12 md:mt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:items-stretch lg:gap-20">
+        <div className="mt-10 grid gap-12 md:mt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:items-stretch lg:gap-20">
           {/* a few words, and GitHub */}
           <div className="min-w-0">
             <p className="max-w-[24rem] text-[18px] leading-[1.55] text-sky-soft">{t('guestbook.note')}</p>

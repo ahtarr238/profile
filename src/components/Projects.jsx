@@ -694,14 +694,15 @@ export default function Projects() {
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="glow -right-56 top-[12%] h-[700px] w-[460px] opacity-70" />
       </div>
-      <div className="relative mx-auto flex w-full max-w-[1320px] shrink-0 items-end justify-between gap-6 px-6 md:px-10">
+      {/* centred over the carousel, which is centred too */}
+      <div className="relative mx-auto flex w-full max-w-[1320px] shrink-0 items-end justify-between gap-6 px-6 md:flex-col md:items-center md:justify-start md:gap-2 md:px-10">
         {/* sized by the screen's height too, so a short screen still fits everything */}
         <RevealText
           text={t('projects.title')}
           accent="."
-          className="font-display text-[clamp(52px,min(13vw,11svh),140px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft"
+          className="font-display text-[clamp(52px,min(13vw,11svh),140px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft md:text-center"
         />
-        <p className="mb-2 hidden text-right text-[13px] text-dim sm:block">{t('projects.hint')}</p>
+        <p className="mb-2 hidden text-right text-[13px] text-dim sm:block md:mb-0 md:text-center">{t('projects.hint')}</p>
       </div>
       <div className="relative mt-3 flex min-h-0 flex-1 flex-col md:mt-4">
         <ProjectStage />

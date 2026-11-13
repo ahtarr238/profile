@@ -71,11 +71,11 @@ export default function Contact() {
       <div aria-hidden="true" className="glow -right-56 top-[10%] h-[680px] w-[460px] opacity-70" />
 
       <div className="relative mx-auto max-w-[1320px] px-6 pb-28 md:px-10 md:pb-36">
-        <RevealText text={t('contact.title')} accent="." className="font-display text-[clamp(72px,15vw,230px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft" />
-
-        <div className="mt-14 grid gap-14 md:mt-20 lg:grid-cols-[1fr_520px] lg:gap-20">
+        {/* the title belongs to the left column here, beside the form, not across the page */}
+        <div className="grid gap-14 pt-6 md:pt-10 lg:grid-cols-[1fr_520px] lg:gap-20">
           <div className="flex flex-col">
-            <p className="max-w-[26rem] text-[18px] leading-[1.55] text-sky-soft">{t('contact.note')}</p>
+            <RevealText text={t('contact.title')} accent="." className="font-display text-[clamp(56px,9vw,128px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft" />
+            <p className="mt-8 max-w-[26rem] text-[18px] leading-[1.55] text-sky-soft md:mt-10">{t('contact.note')}</p>
             <div className="mt-10">
               <CopyEmail />
             </div>

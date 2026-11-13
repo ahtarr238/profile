@@ -241,32 +241,68 @@ export default function Certificates() {
     <section id="certificates" ref={sectionRef} className="relative overflow-hidden">
       <div aria-hidden="true" className="glow -left-56 top-[20%] h-[640px] w-[440px] opacity-70 max-md:hidden" />
 
-      <div className="relative mx-auto max-w-[1320px] px-6 pb-10 md:px-10 md:pt-32 md:pb-16">
-        <RevealText
-          text={t('certs.title')}
-          accent="."
-          className="font-display text-[clamp(48px,12.5vw,190px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft"
-        />
-        <ul className="mt-6 flex flex-wrap gap-2">
-          {['Dicoding', 'MySkill', 'Education Alliance Finland', 'DBS Foundation'].map((t) => (
-            <li key={t}>
-              <Tag>{t}</Tag>
-            </li>
-          ))}
-        </ul>
+      <div className="relative mx-auto max-w-[1320px] px-6 pb-10 md:px-10 md:pt-[clamp(2.5rem,7svh,4rem)] md:pb-[clamp(2.5rem,6svh,4rem)]">
+        {/* laptops and up: the title on the right, who issued them on the left of the same row */}
+        <div className="flex flex-col gap-6 lg:flex-row-reverse lg:items-end lg:justify-between lg:gap-12">
+          <RevealText
+            text={t('certs.title')}
+            accent="."
+            className="font-display text-[clamp(48px,min(12.5vw,13svh),160px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft lg:shrink-0 lg:text-right lg:whitespace-nowrap"
+          />
+          <ul className="flex flex-wrap gap-2 lg:mb-4 lg:max-w-[22rem]">
+            {['Dicoding', 'MySkill', 'Education Alliance Finland', 'DBS Foundation'].map((t) => (
+              <li key={t}>
+                <Tag>{t}</Tag>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {phone ? (
           <PhoneStrip open={open} onOpen={setOpen} />
         ) : (
-        <div className="mt-10 grid gap-8 md:mt-16 md:grid-cols-12 md:items-center md:gap-14">
+        <div className="mt-10 grid gap-8 md:mt-[clamp(1.5rem,5svh,3rem)] md:grid-cols-12 md:items-center md:gap-14">
           <motion.div
             initial={{ opacity: 0, y: 28 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.8, ease }}
-            className="md:col-span-7"
+            // never taller than about half the screen, so the section fits a laptop screen whole
+            className="md:col-span-7 md:max-w-[calc(50svh_*_16_/_11_+_24px)]"
           >
             <Featured cert={cert} onOpen={setOpen} hidden={open?.id === cert.id} />
+            {/* who issued the one on show, and what you can do with it */}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+              <p className="min-w-0 truncate text-[13px] text-mist" aria-live="polite">
+                {cert.issuer}
+                <span className="text-dim tabular-nums"> · {date(cert.issuedOn)}</span>
+              </p>
+              <div className="flex shrink-0 items-center gap-5">
+                <button
+                  type="button"
+                  onClick={() => setOpen(cert)}
+                  className="group inline-flex h-11 items-center gap-2.5 rounded-[4px] bg-coral px-4 text-[14px] font-medium text-ground transition-[background-color,transform] duration-150 ease-out hover:bg-[#f27c5d] active:scale-[0.97]"
+                >
+                  {t('certs.open')}
+                  <ArrowUpRight
+                    size={18}
+                    strokeWidth={1.75}
+                    aria-hidden="true"
+                    className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  />
+                </button>
+                {cert.verify && (
+                  <a
+                    href={cert.verify}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-11 items-center gap-1.5 text-[14px] text-sky-soft underline decoration-sky-soft/30 underline-offset-4 transition-colors duration-150 ease-out hover:decoration-coral"
+                  >
+                    {t('certs.verify')}
+                  </a>
+                )}
+              </div>
+            </div>
           </motion.div>
 
           {/* the list: hover or tap a title to bring it up */}
@@ -295,53 +331,27 @@ export default function Certificates() {
                     onClick={() => pick(i)}
                     onMouseEnter={() => pick(i)}
                     aria-current={on ? 'true' : undefined}
-                    className="flex w-full items-start gap-4 py-4 pr-2 pl-5 text-left"
+                    title={`${c.title} · ${c.issuer} · ${date(c.issuedOn)}`}
+                    className="flex w-full items-baseline gap-4 py-2.5 pr-2 pl-5 text-left"
                   >
-                    <span className={`font-display pt-1 text-[14px] tabular-nums transition-colors duration-200 ${on ? 'text-coral' : 'text-dim'}`}>
+                    <span className={`font-display text-[13px] tabular-nums transition-colors duration-200 ${on ? 'text-coral' : 'text-dim'}`}>
                       {String(i + 1).padStart(2, '0')}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span
-                        className={`font-display block text-[20px] leading-[1.2] transition-colors duration-200 md:text-[23px] ${
-                          on ? 'text-sky-soft' : 'text-mist'
-                        }`}
-                      >
-                        {c.title}
-                      </span>
-                      <span className="mt-1 block text-[13px] text-mist">
-                        {c.issuer}
-                        <span className="text-dim tabular-nums"> · {date(c.issuedOn)}</span>
-                      </span>
+                    <span
+                      className={`font-display min-w-0 flex-1 truncate text-[18px] leading-[1.35] transition-colors duration-200 lg:text-[20px] ${
+                        on ? 'text-sky-soft' : 'text-mist'
+                      }`}
+                    >
+                      {c.title}
+                    </span>
+                    {/* the full issuer and date show in the frame's caption and the full-size view */}
+                    <span className="shrink-0 text-[12px] whitespace-nowrap text-dim tabular-nums">
+                      {c.issuer.split('/')[0].trim()} · {c.issuedOn.slice(0, 4)}
                     </span>
                   </button>
                 </motion.li>
               )
             })}
-            <li className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-6">
-              <button
-                type="button"
-                onClick={() => setOpen(cert)}
-                className="group inline-flex h-12 items-center gap-3 rounded-[4px] bg-coral px-5 text-[15px] font-medium text-ground transition-[background-color,transform] duration-150 ease-out hover:bg-[#f27c5d] active:scale-[0.97]"
-              >
-                {t('certs.open')}
-                <ArrowUpRight
-                  size={18}
-                  strokeWidth={1.75}
-                  aria-hidden="true"
-                  className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                />
-              </button>
-              {cert.verify && (
-                <a
-                  href={cert.verify}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-12 items-center gap-1.5 text-[15px] text-sky-soft underline decoration-sky-soft/30 underline-offset-4 transition-colors duration-150 ease-out hover:decoration-coral"
-                >
-                  {t('certs.verify')}
-                </a>
-              )}
-            </li>
           </ol>
         </div>
         )}

@@ -108,15 +108,16 @@ export default function About() {
           <RevealText
             text={t('about.title')}
             accent="."
-            className="font-display text-[clamp(64px,13vw,200px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft"
+            className="font-display text-[clamp(64px,min(13vw,18svh),200px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft"
           />
         </ApproachingTitle>
 
-        <div className="mt-10 grid gap-10 md:mt-16 md:grid-cols-12 md:gap-16">
+        {/* spacing and sizes ease off on shorter screens, so the section fits under the navbar whole */}
+        <div className="mt-10 grid gap-10 md:mt-[clamp(2rem,6svh,4rem)] md:grid-cols-12 md:gap-16">
           {/* portrait, with the short facts under it */}
           {/* phones: a small photo beside the facts; desktop: a modest portrait over them */}
           <motion.figure className="grid grid-cols-[104px_1fr] items-start gap-5 md:col-span-4 md:block">
-            <div className="md:max-w-[280px]">
+            <div className="md:max-w-[min(280px,30svh)]">
               <Portrait src={profile.photo} alt={t('about.portraitAlt', { name: profile.name })} />
             </div>
             <figcaption>
@@ -135,12 +136,12 @@ export default function About() {
           <div className="md:col-span-8">
             <ScrollLine text={lead} className="font-display text-[26px] leading-[1.25] text-sky-soft md:text-[34px]" />
 
-            <ul className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 md:mt-14">
+            <ul className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 md:mt-[clamp(1.5rem,4svh,3.5rem)]">
               {stats.map((s, i) => (
                 <motion.li
                   key={s.key}
                   {...rise(0.06 * i)}
-                  className="flex h-28 flex-col justify-between rounded-[6px] bg-tile p-4 transition-colors md:h-36 md:p-5 duration-200 ease-out hover:bg-navy"
+                  className="flex h-28 flex-col justify-between rounded-[6px] bg-tile p-4 transition-colors md:h-[clamp(7rem,15svh,9rem)] md:p-5 duration-200 ease-out hover:bg-navy"
                 >
                   <span className="font-display text-[40px] leading-none font-light text-sky-soft md:text-[48px]">
                     <CountUp value={s.value} />
@@ -150,7 +151,7 @@ export default function About() {
               ))}
             </ul>
 
-            <motion.div {...rise(0.1)} className="mt-10 md:mt-14">
+            <motion.div {...rise(0.1)} className="mt-10 md:mt-[clamp(1.5rem,4svh,3.5rem)]">
               <p className="mb-4 text-[13px] text-mist">{t('about.tools')}</p>
               <ul className="flex flex-wrap gap-2">
                 {tools.map((t) => (
