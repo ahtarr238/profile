@@ -8,7 +8,7 @@ export default function Footer() {
   const { t } = useLang()
   return (
     <footer className="relative overflow-hidden border-t border-sky-soft/10">
-      <div className="mx-auto flex max-w-[1320px] flex-col gap-6 px-6 pt-10 md:flex-row md:items-center md:justify-between md:px-10">
+      <div className="relative z-10 mx-auto flex max-w-[1320px] flex-col gap-6 px-6 pt-10 md:flex-row md:items-center md:justify-between md:px-10">
         <ul className="flex flex-wrap gap-x-6 text-[14px] text-mist">
           {nav.map((n) => (
             <li key={n.id}>
@@ -49,11 +49,12 @@ export default function Footer() {
       </div>
 
       {/* the name again, cut by the bottom edge. Drawn with CSS content: it's decoration, so it
-          stays out of the page text that readers and search engines see (and out of contrast checks) */}
+          stays out of the page text that readers and search engines see (and out of contrast checks).
+          Its line box reaches up over the links above, so it lets every click through. */}
       <p
         aria-hidden="true"
         data-word={profile.short}
-        className="font-display mx-auto -mb-[0.32em] max-w-[1320px] px-6 pt-6 text-[clamp(112px,25vw,380px)] leading-[0.8] font-medium tracking-[-0.055em] text-tile select-none before:content-[attr(data-word)] after:text-coral/40 after:content-['.'] md:px-10"
+        className="font-display pointer-events-none mx-auto -mb-[0.32em] max-w-[1320px] px-6 pt-6 text-[clamp(112px,25vw,380px)] leading-[0.8] font-medium tracking-[-0.055em] text-tile select-none before:content-[attr(data-word)] after:text-coral/40 after:content-['.'] md:px-10"
       />
     </footer>
   )
