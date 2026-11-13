@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Eye, MessageCircle, ThumbsUp, Users } from 'lucide-react'
 import { friendly } from './errors'
+import SpeedCard from './SpeedCard'
 import { FeaturedIcon, Notice } from './ui'
 import { Skeleton } from '@/admin/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/admin/components/ui/table'
@@ -443,6 +444,8 @@ export default function StatsPanel({ token, catalog }) {
         </div>
 
         <TrafficChart series={data.series} />
+
+        <SpeedCard speed={data.speed} />
 
         {catalog && (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">

@@ -23,6 +23,7 @@ export const k = {
   countries: (d) => `stats:country:${d}`,
   devices: (d) => `stats:device:${d}`,
   events: (d) => `stats:event:${d}`,
+  vitals: (d) => `stats:vitals:${d}`, // "lcp:mobile:4" → count (see _vitals.js)
   items: (d) => `stats:item:${d}`, // "video_open:ontime" → count
   total: 'stats:views:total',
   likes: (d) => `stats:likes:${d}`,

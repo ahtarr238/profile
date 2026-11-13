@@ -3,6 +3,7 @@
 import { config, githubUser, isUserToken, noStore } from './_auth.js'
 import { pipeline, redisReady } from './_redis.js'
 import { EVENTS, k, lastDays } from './_stats.js'
+import { summarize as speedSummary } from './_vitals.js'
 
 const pairs = (flat) => {
   const out = {}
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
 
   const n = [7, 30, 90].includes(Number(new URL(req.url, 'http://x').searchParams.get('days'))) ? Number(new URL(req.url, 'http://x').searchParams.get('days')) : 30
   const days = lastDays(n)
-  const PER_DAY = 8 // commands per day below
+  const PER_DAY = 9 // commands per day below
   try {
     const perDay = days.flatMap((d) => [
       ['GET', k.views(d)],
@@ -48,6 +49,7 @@ export default async function handler(req, res) {
       ['HGETALL', k.events(d)],
       ['GET', k.likes(d)],
       ['HGETALL', k.items(d)],
+      ['HGETALL', k.vitals(d)],
     ])
     const out = await pipeline([...perDay, ['PFCOUNT', ...days.map(k.visitors)], ['GET', k.total], ['GET', k.likesTotal]])
     const refs = {}
@@ -55,13 +57,15 @@ export default async function handler(req, res) {
     const devices = {}
     const events = Object.fromEntries(EVENTS.map((e) => [e, 0]))
     const items = {}
+    const vitals = {}
     const series = days.map((date, i) => {
-      const [views, visitors, r, co, de, ev, lk, it] = out.slice(i * PER_DAY, i * PER_DAY + PER_DAY)
+      const [views, visitors, r, co, de, ev, lk, it, vi] = out.slice(i * PER_DAY, i * PER_DAY + PER_DAY)
       add(refs, pairs(r))
       add(countries, pairs(co))
       add(devices, pairs(de))
       add(events, pairs(ev))
       add(items, pairs(it))
+      add(vitals, pairs(vi))
       return { date, views: Number(views) || 0, visitors: Number(visitors) || 0, likes: Number(lk) || 0 }
     })
     const [uniqueVisitors, allTime, likesAllTime] = out.slice(days.length * PER_DAY)
@@ -79,6 +83,7 @@ export default async function handler(req, res) {
       devices,
       events,
       items, // "project_open:ontime" → count; the admin matches ids to titles
+      speed: speedSummary(vitals), // real visitors' Core Web Vitals, per device
     })
   } catch {
     return send(502, { error: 'stats_unavailable' })

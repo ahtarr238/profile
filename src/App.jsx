@@ -16,6 +16,14 @@ const Sections = lazy(() => import('./components/Sections'))
 export default function App() {
   const lenis = useLenis()
   useEffect(trackPageview, [])
+  // speed as this visitor gets it: loaded once the page is idle (the browser keeps the timings
+  // from page start, so starting late misses nothing), kept out of the first render
+  useEffect(() => {
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500))
+    const cancel = window.cancelIdleCallback || clearTimeout
+    const id = idle(() => import('./lib/vitals').then((m) => m.reportVitals()), { timeout: 3000 })
+    return () => cancel(id)
+  }, [])
   // the loading screen plays on every page load, refreshes included
   const [loading, setLoading] = useState(true) // the loader is on screen
   const [ready, setReady] = useState(false) // the hero may play its entrance

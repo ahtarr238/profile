@@ -1,6 +1,6 @@
 // Tells /api/track about a page view or one of a few named clicks. No cookies, no IDs, nothing
 // stored in the browser. Skipped on localhost, on /admin, and when the browser asks not to be tracked.
-const off =
+export const off =
   typeof window === 'undefined' ||
   /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname) ||
   window.location.pathname.startsWith('/admin') ||
