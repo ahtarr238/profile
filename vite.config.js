@@ -70,8 +70,33 @@ function seoFiles() {
   }
 }
 
+// `npm run dev` runs the public read-only endpoints from api/ too, so the GitHub grid and the
+// guestbook look on localhost the way they do live. Without the Redis variables (they live on
+// Vercel), the guestbook simply has no notes and refuses new ones; the admin's endpoints stay
+// live-only on purpose.
+const DEV_API = ['/api/github-activity', '/api/guestbook']
+function devApi() {
+  return {
+    name: 'dev-api',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const path = (req.url || '').split('?')[0]
+        if (!DEV_API.includes(path)) return next()
+        try {
+          const mod = await server.ssrLoadModule(`${path}.js`)
+          await mod.default(req, res)
+        } catch (e) {
+          res.statusCode = 500
+          res.end(String(e?.message || e))
+        }
+      })
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [publishedOnly(), seoHtml(), seoFiles(), react(), tailwindcss()],
+  plugins: [publishedOnly(), seoHtml(), seoFiles(), devApi(), react(), tailwindcss()],
   // @/ is src/ (the admin's shadcn components import through it)
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   // Inline PostCSS config so Vite doesn't pick up a postcss.config from a parent folder.

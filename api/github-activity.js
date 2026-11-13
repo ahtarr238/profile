@@ -1,5 +1,5 @@
-// GET /api/github-activity → what the site owner has been doing on GitHub lately, for the
-// "Lately" section: activity per day for the last 12 weeks and the latest few things.
+// GET /api/github-activity → how busy the site owner has been on GitHub lately, for the
+// "Lately" section: activity per day for the last 12 weeks, plus totals.
 // Only public events, read from GitHub's public API by the server (visitors' browsers never
 // talk to GitHub), cached for half an hour in Redis and at the edge, so GitHub sees a couple of
 // requests an hour however many people visit.
@@ -8,7 +8,7 @@ import { dayKey, lastDays } from './_stats.js'
 
 const OWNER = (process.env.GITHUB_REPO || 'ahtarr238/profile').split('/')[0]
 const FRESH_MS = 30 * 60 * 1000
-const CACHE_KEY = 'gh:activity'
+const CACHE_KEY = 'gh:activity:v2'
 const DAYS = 84 // twelve weeks
 
 const KIND = {
@@ -27,26 +27,16 @@ async function fetchEvents() {
   return res.json()
 }
 
-/** The summary the page shows; nothing else from the events leaves the server. */
+/** The summary the page shows: counts per day only, no repo names or messages leave the server. */
 export function summarize(events, now = new Date()) {
   const days = lastDays(DAYS, now)
   const counts = Object.fromEntries(days.map((d) => [d, 0]))
-  const recent = []
-  const repos = {}
-  const sorted = (Array.isArray(events) ? events : []).slice().sort((a, b) => String(b?.created_at).localeCompare(String(a?.created_at)))
-  for (const e of sorted) {
+  for (const e of Array.isArray(events) ? events : []) {
     const kind = KIND[e?.type]
     if (!kind || typeof e.repo?.name !== 'string' || !/^[\w.-]+\/[\w.-]+$/.test(e.repo.name)) continue
     if (kind === 'create' && e.payload?.ref_type !== 'repository') continue // new branches and tags are noise
     const day = dayKey(new Date(e.created_at))
     if (day in counts) counts[day] += 1
-    repos[e.repo.name] = (repos[e.repo.name] || 0) + 1
-    // the latest few, with runs of the same thing folded together ("pushed 3 times to …")
-    const raw = kind === 'pr' || kind === 'issue' ? String(e.payload?.action || '') : ''
-    const action = /^[a-z_]{1,20}$/.test(raw) ? raw : ''
-    const last = recent[recent.length - 1]
-    if (last && last.kind === kind && last.repo === e.repo.name && last.action === action) last.times += 1
-    else if (recent.length < 5) recent.push({ kind, action, repo: e.repo.name, at: e.created_at, times: 1 })
   }
   const series = days.map((date) => ({ date, count: counts[date] }))
   let streak = 0
@@ -61,11 +51,6 @@ export function summarize(events, now = new Date()) {
     total: series.reduce((s, d) => s + d.count, 0),
     activeDays: series.filter((d) => d.count > 0).length,
     streak,
-    topRepos: Object.entries(repos)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([repo, count]) => ({ repo, count })),
-    recent,
     updated: now.toISOString(),
   }
 }

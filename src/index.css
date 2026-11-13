@@ -128,3 +128,18 @@ html.lenis body {
 }
 
 
+
+/* Guestbook notes drifting sideways (DropBy.jsx): the row is doubled, so sliding half its
+   width lands exactly where it started. Hovering or focusing a note holds it still. */
+@keyframes notes-drift {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.notes-drift {
+  animation: notes-drift var(--drift, 60s) linear infinite;
+}
+.notes-drift:hover,
+.notes-drift:focus-within {
+  animation-play-state: paused;
+}

@@ -8,7 +8,9 @@ import LangSwitch from './LangSwitch'
 import { useLang } from '../i18n/context'
 
 const ease = [0.22, 1, 0.36, 1]
-const ids = nav.map((n) => n.id)
+// sections that aren't in the menu but still end the one above: inside them nothing is underlined
+const QUIET = ['drop-by']
+const ids = [...nav.map((n) => n.id), ...QUIET]
 
 function useActiveSection() {
   const [active, setActive] = useState(null)
@@ -18,8 +20,10 @@ function useActiveSection() {
       const els = ids.map((id) => document.getElementById(id)).filter(Boolean)
       const line = window.innerHeight * 0.4
       let current = null
-      for (const el of els) if (el.getBoundingClientRect().top <= line) current = el.id
-      setActive(current)
+      // the last section whose top has passed the line, in page order
+      for (const el of els.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top))
+        if (el.getBoundingClientRect().top <= line) current = el.id
+      setActive(QUIET.includes(current) ? null : current)
     }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
