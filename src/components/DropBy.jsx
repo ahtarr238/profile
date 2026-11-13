@@ -36,10 +36,10 @@ const TILT = ['-rotate-[1.5deg] translate-y-1', 'rotate-[1deg] -translate-y-1', 
 function GitHubGrid({ data }) {
   const { t } = useLang()
   const weeks = []
-  // columns of seven days, oldest on the left; the first column is padded so weekdays line up
-  const first = new Date(`${data.days[0].date}T00:00:00Z`).getUTCDay()
-  const cells = [...Array((first + 6) % 7).fill(null), ...data.days]
-  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
+  // a clean 12 × 7 block: the last 84 days, seven to a column, oldest on the left and today
+  // in the bottom-right corner (rows aren't weekdays, so no column starts or ends ragged)
+  const days = data.days.slice(-84)
+  for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7))
   const cell = 'size-[clamp(13px,3.6vw,19px)] rounded-[4px]'
   return (
     <div className="mt-10">
@@ -57,7 +57,9 @@ function GitHubGrid({ data }) {
               viewport={{ once: true }}
               transition={{ duration: 0.5, ease, delay: w * 0.03 }}
             >
-              {week.map((d, i) => (d ? <span key={d.date} title={`${d.date}: ${d.count}`} className={`${cell} ${level(d.count)}`} /> : <span key={`pad-${i}`} className={cell} />))}
+              {week.map((d) => (
+                <span key={d.date} title={`${d.date}: ${d.count}`} className={`${cell} ${level(d.count)}`} />
+              ))}
             </motion.div>
           ))}
         </div>
@@ -158,7 +160,7 @@ export default function DropBy() {
       <div className="relative mx-auto max-w-[1320px] px-6 md:px-10 md:pt-16">
         <RevealText text={t('guestbook.title')} accent="." className="font-display text-[clamp(56px,12vw,180px)] leading-[0.86] font-normal tracking-[-0.05em] text-sky-soft" />
 
-        <div className="mt-10 grid gap-12 md:mt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:items-start lg:gap-20">
+        <div className="mt-10 grid gap-12 md:mt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:items-stretch lg:gap-20">
           {/* a few words, and GitHub */}
           <div className="min-w-0">
             <p className="max-w-[24rem] text-[18px] leading-[1.55] text-sky-soft">{t('guestbook.note')}</p>
@@ -175,7 +177,7 @@ export default function DropBy() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.35, ease }}
-                className="flex min-h-[220px] flex-col items-start justify-center rounded-[22px] bg-tile/80 p-7"
+                className="flex min-h-[220px] flex-col items-start justify-center rounded-[22px] bg-tile/80 p-7 lg:h-full"
               >
                 <span className="grid size-11 place-items-center rounded-full bg-coral text-ground">
                   <Check size={20} strokeWidth={2.2} aria-hidden="true" />
@@ -194,7 +196,7 @@ export default function DropBy() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.35, ease }}
-                className="relative rounded-[22px] bg-tile/80 p-2 ring-1 ring-sky-soft/10 transition-shadow duration-200 focus-within:ring-coral/50"
+                className="relative flex flex-col rounded-[22px] bg-tile/80 p-2 ring-1 ring-sky-soft/10 transition-shadow duration-200 focus-within:ring-coral/50"
               >
                 <label htmlFor="gb-message" className="sr-only">
                   {t('guestbook.message')}
@@ -205,7 +207,7 @@ export default function DropBy() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={t('guestbook.message')}
-                  className="block w-full resize-none bg-transparent px-4 pt-4 pb-2 text-[18px] leading-[1.5] text-sky-soft outline-none placeholder:text-dim"
+                  className="block min-h-32 w-full flex-1 resize-none bg-transparent px-4 pt-4 pb-2 text-[18px] leading-[1.5] text-sky-soft outline-none placeholder:text-dim"
                 />
                 {/* bots fill every field they find; people never see this one */}
                 <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
