@@ -18,24 +18,70 @@
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <style>
+      /* the prerendered copy inside #root: out of sight for everyone with JavaScript (React
+         replaces it within moments), a plain readable page for browsers without it */
+      .prerender {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+      @media (scripting: none) {
+        .prerender {
+          position: static;
+          width: auto;
+          height: auto;
+          overflow: visible;
+          clip-path: none;
+          white-space: normal;
+          max-width: 40rem;
+          margin: 3rem auto;
+          padding: 0 1.5rem 4rem;
+          font-family: system-ui, sans-serif;
+          line-height: 1.55;
+          color: #e9f1f8;
+        }
+        .prerender a {
+          color: #ee6a48;
+        }
+        .prerender h1 {
+          font-size: 2rem;
+          line-height: 1.15;
+        }
+        .prerender h2 {
+          margin-top: 2.5rem;
+          font-size: 1.4rem;
+        }
+        .prerender h3 {
+          margin-top: 1.25rem;
+          font-size: 1.1rem;
+        }
+        .prerender p {
+          margin-top: 0.5rem;
+        }
+        .prerender ul {
+          margin-top: 0.5rem;
+          padding-left: 1.25rem;
+          list-style: disc;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <!-- for crawlers and browsers without JavaScript: the essentials, as plain HTML -->
-    <noscript>
-      <main style="max-width: 40rem; margin: 3rem auto; padding: 0 1.5rem; font-family: system-ui, sans-serif; color: #e9f1f8; background: #070c1a">
-        <!-- who, the projects and the certificates: written from src/data/cms.json at build -->
-        <!-- seo:noscript -->
+    <!-- The page's content as plain HTML, written from src/data/cms.json at build by
+         tools/seo-head.mjs, for crawlers that read the HTML without running JavaScript.
+         React replaces it when it starts; until then it stays visually hidden (no flash before
+         the loading screen), and it shows as a simple page only when JavaScript is off. -->
+    <div id="root">
+      <main class="prerender">
+        <!-- seo:static -->
         <h1>Ahtar Maulana Gurning, Solution Engineer</h1>
-        <!-- /seo:noscript -->
-        <h2>Contact</h2>
-        <p>
-          <a href="mailto:ahtarmaulana23@gmail.com" style="color: #ee6a48">ahtarmaulana23@gmail.com</a> ·
-          <a href="https://github.com/ahtarr238" style="color: #ee6a48">GitHub</a> ·
-          <a href="https://www.linkedin.com/in/ahtar-maulana-9b0506328" style="color: #ee6a48">LinkedIn</a>
-        </p>
+        <!-- /seo:static -->
       </main>
-    </noscript>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

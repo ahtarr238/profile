@@ -132,48 +132,66 @@ export function seoHead(raw) {
 }
 
 const isoDate = (s) => (/^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s : '')
+// a profile link's name from its address: github.com/x → GitHub
+const LINK_NAMES = { 'github.com': 'GitHub', 'linkedin.com': 'LinkedIn', 'instagram.com': 'Instagram', 'x.com': 'X', 'twitter.com': 'X', 'youtube.com': 'YouTube', 'dribbble.com': 'Dribbble', 'behance.net': 'Behance' }
+const linkName = (u) => {
+  try {
+    const host = new URL(u).hostname.replace(/^www\./, '')
+    return LINK_NAMES[host] || host
+  } catch {
+    return ''
+  }
+}
 
 /**
- * The page's content as plain HTML inside <noscript>, for crawlers and browsers that don't run
- * JavaScript (Bing often, and most AI search crawlers): who this is, every published project
- * with its description, and every certificate. Built from cms.json, so it never drifts from the site.
+ * The page's content as plain HTML, written inside #root at build: who this is, every published
+ * project with its description, every certificate, and how to get in touch. It's for crawlers
+ * that read the HTML without running JavaScript (Bing often, most AI search crawlers); people
+ * with JavaScript never see it, because React replaces it when it starts, and index.html keeps
+ * it visually hidden until then (and shows it as a plain page when JavaScript is off).
+ * Built from cms.json, so it never drifts from the site.
  */
-export function seoNoscript(raw, cms = {}) {
+export function seoStatic(raw, cms = {}) {
   const s = cleanSeo(raw)
   const p = s.person
   const pad = '\n        '
   const bio = p.description || s.description
-  const out = [`<h1>${esc(p.name)}${p.jobTitle ? `, ${esc(p.jobTitle)}` : ''}</h1>`, bio && `<p>${esc(bio)}</p>`].filter(Boolean)
+  const out = ['<header>', `  <h1>${esc(p.name)}${p.jobTitle ? `, ${esc(p.jobTitle)}` : ''}</h1>`]
+  if (bio) out.push(`  <p>${esc(bio)}</p>`)
   const where = [p.school && `Studying at ${esc(p.school)}`, [p.locality, p.region].filter(Boolean).map(esc).join(', ')].filter(Boolean)
-  if (where.length) out.push(`<p>${where.join(' · ')}</p>`)
-  if (p.skills.length) out.push(`<p>Works with ${p.skills.map(esc).join(', ')}.</p>`)
+  if (where.length) out.push(`  <p>${where.join(' · ')}</p>`)
+  if (p.skills.length) out.push(`  <p>Works with ${p.skills.map(esc).join(', ')}.</p>`)
+  out.push('</header>')
 
   const projects = (Array.isArray(cms.projects) ? cms.projects : []).filter((x) => x && x.published)
   if (projects.length) {
-    out.push('<h2>Projects</h2>', '<ul>')
+    out.push('<section aria-labelledby="static-projects">', '  <h2 id="static-projects">Projects</h2>')
     for (const x of projects) {
-      const title = text(x.title, 160)
       const role = text(x.role, 40)
       const description = text(x.description, 1200)
       const tags = (Array.isArray(x.tags) ? x.tags : []).map((t) => text(t, 40)).filter(Boolean)
-      out.push(
-        `  <li><strong>${esc(title)}</strong>${role ? ` (${esc(role)})` : ''}${description ? `: ${esc(description)}` : ''}${tags.length ? ` <em>${tags.map(esc).join(' · ')}</em>` : ''}</li>`,
-      )
+      out.push('  <article>', `    <h3>${esc(text(x.title, 160))}${role ? ` (${esc(role)})` : ''}</h3>`)
+      if (description) out.push(`    <p>${esc(description)}</p>`)
+      if (tags.length) out.push(`    <p>${tags.map(esc).join(' · ')}</p>`)
+      out.push('  </article>')
     }
-    out.push('</ul>')
+    out.push('</section>')
   }
 
   const certificates = (Array.isArray(cms.certificates) ? cms.certificates : [])
     .filter((x) => x && x.published)
     .sort((a, b) => String(b.issued_on).localeCompare(String(a.issued_on)))
   if (certificates.length) {
-    out.push('<h2>Certificates</h2>', '<ul>')
+    out.push('<section aria-labelledby="static-certificates">', '  <h2 id="static-certificates">Certificates</h2>', '  <ul>')
     for (const x of certificates) {
       const date = isoDate(x.issued_on)
-      out.push(`  <li>${esc(text(x.title, 160))}${x.issuer ? `, ${esc(text(x.issuer, 160))}` : ''}${date ? ` (${date.slice(0, 4)})` : ''}</li>`)
+      out.push(`    <li>${esc(text(x.title, 160))}${x.issuer ? `, ${esc(text(x.issuer, 160))}` : ''}${date ? ` (${date.slice(0, 4)})` : ''}</li>`)
     }
-    out.push('</ul>')
+    out.push('  </ul>', '</section>')
   }
+
+  const contact = [p.email && `<a href="mailto:${esc(p.email)}">${esc(p.email)}</a>`, ...p.links.map((u) => `<a href="${esc(u)}">${esc(linkName(u))}</a>`)].filter(Boolean)
+  if (contact.length) out.push('<section aria-labelledby="static-contact">', '  <h2 id="static-contact">Contact</h2>', `  <p>${contact.join(' · ')}</p>`, '</section>')
   return out.join(pad)
 }
 
@@ -190,5 +208,5 @@ export function injectSeo(html, raw, cms = {}) {
   return html
     // function replacers: a "$&" typed into a title must stay text, not become a replace pattern
     .replace(/<!-- seo:start -->[\s\S]*?<!-- seo:end -->/, () => `<!-- seo:start -->\n    ${seoHead(raw)}\n    <!-- seo:end -->`)
-    .replace(/<!-- seo:noscript -->[\s\S]*?<!-- \/seo:noscript -->/, () => `<!-- seo:noscript -->\n        ${seoNoscript(raw, cms)}\n        <!-- /seo:noscript -->`)
+    .replace(/<!-- seo:static -->[\s\S]*?<!-- \/seo:static -->/, () => `<!-- seo:static -->\n        ${seoStatic(raw, cms)}\n        <!-- /seo:static -->`)
 }
