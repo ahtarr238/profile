@@ -68,7 +68,7 @@ function ProjectVideo({ project, mediaRef, active = true, suspend = false, curta
   const expand = async () => {
     const video = ref.current
     if (!video) return
-    trackEvent('video_open')
+    trackEvent('video_open', project.id)
     video.muted = false
     setMuted(false)
     video.play().catch(() => {})
@@ -487,10 +487,12 @@ function ProjectStage() {
 
   const openDetail = (button) => {
     opener.current = button
+    trackEvent('project_open', projects[active]?.id)
     setDetail({ index: active, from: mediaRefs.current[active]?.getBoundingClientRect() })
   }
   // switching project inside the panel moves the stage too, so closing flies back to the right one
   const switchDetail = (i) => {
+    trackEvent('project_open', projects[i]?.id)
     pos.stop()
     pos.set(Math.round(pos.get()) + wrapDistance(i - active, n))
     setDetail((d) => ({ ...d, index: i }))

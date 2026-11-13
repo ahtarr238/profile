@@ -28,5 +28,8 @@ export function trackPageview() {
   send({ t: 'pageview', r: ref })
 }
 
-/** One of: contact_whatsapp, contact_email, video_open, cert_open */
-export const trackEvent = (e) => send({ t: 'event', e })
+/**
+ * One of: contact_whatsapp, contact_email, project_open, video_open, cert_open. The last three
+ * take the project's or certificate's id from cms.json, so the admin can show which one.
+ */
+export const trackEvent = (e, id) => send({ t: 'event', e, ...(id ? { i: id } : {}) })

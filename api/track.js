@@ -4,7 +4,7 @@
 // Abuse: only same-site requests, bots ignored, at most 20 hits a minute per visitor.
 import { pipeline, redisReady } from './_redis.js'
 import { body, realVisitor, visitorId } from './_visitor.js'
-import { EVENTS, KEEP_SECONDS, dayKey, k } from './_stats.js'
+import { EVENTS, ITEM_EVENTS, ITEM_ID, KEEP_SECONDS, MAX_ITEMS, dayKey, k } from './_stats.js'
 
 const device = (ua) => (/ipad|tablet/i.test(ua) ? 'tablet' : /mobi|android|iphone/i.test(ua) ? 'mobile' : 'desktop')
 
@@ -36,15 +36,18 @@ export default async function handler(req, res) {
   const isView = data.t === 'pageview'
   const event = !isView && EVENTS.includes(data.e) ? data.e : null
   if (!isView && !event) return done()
+  const item = event && ITEM_EVENTS.includes(event) && ITEM_ID.test(String(data.i || '')) ? `${event}:${data.i}` : null
 
   const day = dayKey()
   const visitor = visitorId(req, day)
 
   try {
     const minute = Math.floor(Date.now() / 60000)
-    const [hits] = await pipeline([
+    const [hits, , itemCount, itemKnown] = await pipeline([
       ['INCR', `rl:${visitor}:${minute}`],
       ['EXPIRE', `rl:${visitor}:${minute}`, 120],
+      // room for this item today? (an id already counted always is)
+      ...(item ? [['HLEN', k.items(day)], ['HEXISTS', k.items(day), item]] : []),
     ])
     if (hits > 20) return done()
 
@@ -63,6 +66,12 @@ export default async function handler(req, res) {
       : [
           ['HINCRBY', k.events(day), event, 1],
           ['EXPIRE', k.events(day), KEEP_SECONDS],
+          ...(item && (Number(itemKnown) === 1 || Number(itemCount) < MAX_ITEMS)
+            ? [
+                ['HINCRBY', k.items(day), item, 1],
+                ['EXPIRE', k.items(day), KEEP_SECONDS],
+              ]
+            : []),
         ]
     await pipeline(cmds)
   } catch {

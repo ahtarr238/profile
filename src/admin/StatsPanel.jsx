@@ -3,6 +3,7 @@ import { Eye, MessageCircle, ThumbsUp, Users } from 'lucide-react'
 import { friendly } from './errors'
 import { FeaturedIcon, Notice } from './ui'
 import { Skeleton } from '@/admin/components/ui/skeleton'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/admin/components/ui/table'
 import { ToggleGroup, ToggleGroupItem } from '@/admin/components/ui/toggle-group'
 import { cn } from '@/admin/lib/utils'
 
@@ -13,6 +14,7 @@ const longDate = (iso) =>
 const EVENT_LABEL = {
   contact_whatsapp: 'Sent on WhatsApp',
   contact_email: 'Sent by email',
+  project_open: 'Project details opened',
   video_open: 'Project video opened',
   cert_open: 'Certificate opened',
 }
@@ -335,7 +337,63 @@ function Devices({ devices }) {
   )
 }
 
-export default function StatsPanel({ token }) {
+/** Opens of one kind for each id, from the "event:id" counts the API returns. */
+const byId = (items, event) => {
+  const out = {}
+  for (const [key, n] of Object.entries(items || {})) {
+    const [e, id] = key.split(':')
+    if (e === event && id) out[id] = (out[id] || 0) + n
+  }
+  return out
+}
+
+/** Which projects people open: the details panel and the full-screen video, per project. */
+function ProjectsTable({ projects, items }) {
+  const details = byId(items, 'project_open')
+  const videos = byId(items, 'video_open')
+  const rows = projects
+    .map((p) => ({ id: p.id, title: p.title, details: details[p.id] || 0, videos: videos[p.id] || 0 }))
+    .sort((a, b) => b.details + b.videos - (a.details + a.videos))
+  const max = Math.max(1, ...rows.map((r) => r.details + r.videos))
+  const none = rows.every((r) => r.details + r.videos === 0)
+  return (
+    <section className={cn(card, 'overflow-hidden')}>
+      <div className="px-4 pt-5 pb-4 md:px-6">
+        <h3 className="text-lg font-semibold text-ut-900">Projects</h3>
+        <p className="mt-0.5 text-sm text-ut-600">Which ones people open, most first.</p>
+      </div>
+      {none ? (
+        <p className="border-t border-ut-200 px-4 py-6 text-sm text-ut-600 md:px-6">No project opened in this range yet. Counts per project start from this update.</p>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-full px-4 md:px-6">Project</TableHead>
+              <TableHead className="px-3 text-right md:px-4">Details</TableHead>
+              <TableHead className="px-4 text-right md:px-6">Videos</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell className="h-auto max-w-0 px-4 py-3 md:px-6">
+                  <p className="truncate text-sm font-medium text-ut-900">{r.title}</p>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-ut-100" aria-hidden="true">
+                    <div className="h-full rounded-full bg-data" style={{ width: `${((r.details + r.videos) / max) * 100}%` }} />
+                  </div>
+                </TableCell>
+                <TableCell className="h-auto px-3 py-3 text-right text-sm text-ut-700 tabular-nums md:px-4">{nf.format(r.details)}</TableCell>
+                <TableCell className="h-auto px-4 py-3 text-right text-sm text-ut-700 tabular-nums md:px-6">{nf.format(r.videos)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </section>
+  )
+}
+
+export default function StatsPanel({ token, catalog }) {
   const [days, setDays] = useState(30)
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
@@ -385,6 +443,20 @@ export default function StatsPanel({ token }) {
         </div>
 
         <TrafficChart series={data.series} />
+
+        {catalog && (
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <ProjectsTable projects={catalog.projects || []} items={data.items} />
+            <Ranked
+              title="Certificates opened"
+              rows={Object.entries(byId(data.items, 'cert_open'))
+                .filter(([id]) => (catalog.certificates || []).some((c) => c.id === id))
+                .sort((a, b) => b[1] - a[1])}
+              label={(id) => (catalog.certificates || []).find((c) => c.id === id)?.title || id}
+              empty="No certificate opened in this range yet."
+            />
+          </div>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Ranked title="Where they came from" rows={data.referrers} label={(r) => (r === 'direct' ? 'Direct or unknown' : r)} />

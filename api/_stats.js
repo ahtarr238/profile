@@ -1,5 +1,9 @@
 // Shared definitions for visitor stats.
-export const EVENTS = ['contact_whatsapp', 'contact_email', 'video_open', 'cert_open']
+export const EVENTS = ['contact_whatsapp', 'contact_email', 'project_open', 'video_open', 'cert_open']
+// these also say which project or certificate (by its id in cms.json), counted per item
+export const ITEM_EVENTS = ['project_open', 'video_open', 'cert_open']
+export const ITEM_ID = /^[a-z0-9][a-z0-9-]{0,59}$/ // the admin's slugs
+export const MAX_ITEMS = 120 // per day: new ids past this are ignored, so made-up ids can't grow the store
 export const KEEP_SECONDS = 400 * 24 * 3600 // a little over a year of daily counters
 
 // days are counted in Indonesian time, so "today" matches the owner's day
@@ -19,6 +23,7 @@ export const k = {
   countries: (d) => `stats:country:${d}`,
   devices: (d) => `stats:device:${d}`,
   events: (d) => `stats:event:${d}`,
+  items: (d) => `stats:item:${d}`, // "video_open:ontime" → count
   total: 'stats:views:total',
   likes: (d) => `stats:likes:${d}`,
   likesTotal: 'stats:likes:total',

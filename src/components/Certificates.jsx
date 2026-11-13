@@ -20,7 +20,7 @@ function Lightbox({ cert, onClose }) {
 
   useEffect(() => {
     if (!cert) return
-    trackEvent('cert_open')
+    trackEvent('cert_open', cert.id)
     const previous = document.activeElement
     lenis?.stop()
     closeRef.current?.focus()

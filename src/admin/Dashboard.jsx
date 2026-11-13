@@ -10,6 +10,7 @@ import {
   Eye,
   EyeOff,
   FolderOpen,
+  History,
   LogOut,
   MoreVertical,
   Pencil,
@@ -26,6 +27,7 @@ import FilePick from './FilePick'
 import { friendly } from './errors'
 import StatsPanel from './StatsPanel'
 import SeoPanel from './SeoPanel'
+import HistoryPanel from './HistoryPanel'
 import { SessionCard, SessionClock, SessionWarning } from './SessionClock'
 import { useTimeLeft } from './useTimeLeft'
 import { SESSION_MINUTES } from './config'
@@ -446,6 +448,33 @@ export default function Dashboard({ session, onSignOut }) {
     setLog((l) => [...l, 'Update SEO settings'])
   }
 
+  // an older version into the draft: its cms.json, plus any upload it uses that was deleted since
+  // (git still has the file, so it comes back by its sha without uploading anything)
+  const restoreVersion = async (c, title) => {
+    setStatus({ tone: 'info', text: 'Loading that version…' })
+    try {
+      const [old, then, now] = await Promise.all([gh.cmsAt(c.sha), gh.uploadsAt(c.sha), gh.uploadsAt(base.head)])
+      const used = new Set()
+      JSON.stringify(old, (_, v) => {
+        const p = typeof v === 'string' ? uploadRepoPath(v) : null
+        if (p) used.add(p)
+        return v
+      })
+      const back = [...used].filter((p) => !now[p] && then[p])
+      setStaged((st) => ({ ...st, ...Object.fromEntries(back.map((p) => [p, { sha: then[p], preview: '' }])) }))
+      // a version from before SEO settings existed keeps today's
+      setDraft((d) => ({ ...old, seo: old.seo ?? d.seo }))
+      const when = new Date(c.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+      setLog((l) => [...l, `Restore the version from ${when}: ${title.slice(0, 60)}`])
+      setStatus({
+        tone: 'success',
+        text: `Loaded the version from ${when}${back.length ? `, with ${back.length} file${back.length === 1 ? '' : 's'} deleted since` : ''}. Check Projects and Certificates, then Publish, or Discard to cancel.`,
+      })
+    } catch (e) {
+      setStatus({ tone: 'error', text: friendly(e) })
+    }
+  }
+
   const discard = () => {
     setDraft(structuredClone(base.cms))
     reset()
@@ -460,7 +489,7 @@ export default function Dashboard({ session, onSignOut }) {
       await gh.commit({
         head: base.head,
         cms: draft,
-        add: Object.entries(staged).map(([path, f]) => ({ path, blob: f.blob })),
+        add: Object.entries(staged).map(([path, f]) => ({ path, blob: f.blob, sha: f.sha })),
         remove: removed,
         message: `Admin: ${unique.length === 1 ? unique[0] : `${unique.length} changes`}\n\n${unique.map((t) => `- ${t}`).join('\n')}`,
       })
@@ -479,6 +508,7 @@ export default function Dashboard({ session, onSignOut }) {
     { key: 'projects', label: 'Projects', icon: Clapperboard },
     { key: 'certificates', label: 'Certificates', icon: Award },
     { key: 'seo', label: 'SEO', icon: Search },
+    { key: 'history', label: 'History', icon: History },
   ]
   const current = tabs.find((x) => x.key === tab)
   const initials = (session.login || 'a').slice(0, 2).toUpperCase()
@@ -608,24 +638,23 @@ export default function Dashboard({ session, onSignOut }) {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <nav className="flex gap-4 overflow-x-auto px-4" aria-label="Sections">
+          {/* five sections: no counts here, and the open one scrolls into view on narrow phones */}
+          <nav className="flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Sections">
             {tabs.map(({ key, label }) => (
               <button
                 key={key}
                 type="button"
                 aria-current={tab === key ? 'page' : undefined}
-                onClick={() => setTab(key)}
+                onClick={(e) => {
+                  setTab(key)
+                  e.currentTarget.scrollIntoView({ inline: 'nearest', block: 'nearest' })
+                }}
                 className={cn(
-                  'relative flex h-11 shrink-0 items-center gap-2 px-1 text-sm font-semibold transition-colors',
+                  'relative flex h-11 shrink-0 items-center gap-2 px-0.5 text-sm font-semibold transition-colors',
                   tab === key ? 'text-brand-700' : 'text-ut-500 hover:text-ut-700',
                 )}
               >
                 {label}
-                {counts[key] != null && (
-                  <span className={cn('rounded-full border px-2 py-px text-xs font-medium tabular-nums', tab === key ? 'border-brand-200 bg-brand-50 text-brand-700' : 'border-ut-200 bg-ut-50 text-ut-700')}>
-                    {counts[key]}
-                  </span>
-                )}
                 {tab === key && <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-0.5 bg-brand-600" />}
               </button>
             ))}
@@ -640,7 +669,9 @@ export default function Dashboard({ session, onSignOut }) {
               <p className="mt-1 text-base text-ut-600">
                 {tab === 'visitors'
                   ? 'Who came by, from where, and what they did. Counted without cookies.'
-                  : tab === 'seo'
+                  : tab === 'history'
+                    ? 'Every published change, and a way back to any of them.'
+                    : tab === 'seo'
                     ? 'How the site shows up in search results and in shared links. Changes stay here until you publish them.'
                     : `${counts[tab] ?? 0} in total. Changes stay here until you publish them.`}
               </p>
@@ -656,7 +687,8 @@ export default function Dashboard({ session, onSignOut }) {
           {status && <Notice tone={status.tone} className="mt-6">{status.text}</Notice>}
 
           <div className="mt-6 md:mt-8">
-            {tab === 'visitors' && <StatsPanel token={session.token} />}
+            {tab === 'visitors' && <StatsPanel token={session.token} catalog={draft && { projects: draft.projects, certificates: draft.certificates }} />}
+            {tab === 'history' && base && <HistoryPanel gh={gh} head={base.head} dirty={dirty} onRestore={restoreVersion} />}
             {/* keyed on the saved block, so a discard or a fresh load resets the form */}
             {tab === 'seo' && draft && <SeoPanel key={JSON.stringify(draft.seo ?? null)} seo={draft.seo} previewOf={previewOf} onSave={saveSeo} raised={dirty} />}
 

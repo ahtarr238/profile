@@ -37,7 +37,7 @@ export default async function handler(req, res) {
 
   const n = [7, 30, 90].includes(Number(new URL(req.url, 'http://x').searchParams.get('days'))) ? Number(new URL(req.url, 'http://x').searchParams.get('days')) : 30
   const days = lastDays(n)
-  const PER_DAY = 7 // commands per day below
+  const PER_DAY = 8 // commands per day below
   try {
     const perDay = days.flatMap((d) => [
       ['GET', k.views(d)],
@@ -47,18 +47,21 @@ export default async function handler(req, res) {
       ['HGETALL', k.devices(d)],
       ['HGETALL', k.events(d)],
       ['GET', k.likes(d)],
+      ['HGETALL', k.items(d)],
     ])
     const out = await pipeline([...perDay, ['PFCOUNT', ...days.map(k.visitors)], ['GET', k.total], ['GET', k.likesTotal]])
     const refs = {}
     const countries = {}
     const devices = {}
     const events = Object.fromEntries(EVENTS.map((e) => [e, 0]))
+    const items = {}
     const series = days.map((date, i) => {
-      const [views, visitors, r, co, de, ev, lk] = out.slice(i * PER_DAY, i * PER_DAY + PER_DAY)
+      const [views, visitors, r, co, de, ev, lk, it] = out.slice(i * PER_DAY, i * PER_DAY + PER_DAY)
       add(refs, pairs(r))
       add(countries, pairs(co))
       add(devices, pairs(de))
       add(events, pairs(ev))
+      add(items, pairs(it))
       return { date, views: Number(views) || 0, visitors: Number(visitors) || 0, likes: Number(lk) || 0 }
     })
     const [uniqueVisitors, allTime, likesAllTime] = out.slice(days.length * PER_DAY)
@@ -75,6 +78,7 @@ export default async function handler(req, res) {
       countries: top(countries),
       devices,
       events,
+      items, // "project_open:ontime" → count; the admin matches ids to titles
     })
   } catch {
     return send(502, { error: 'stats_unavailable' })
