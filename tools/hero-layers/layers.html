@@ -4,8 +4,9 @@
     <meta charset="utf-8" />
     <title>hero layers</title>
     <!--
-      Draws the hero's parallax layers: dusk over the mountains around Bogor (Gunung Salak),
-      in the site's palette. Seeded, so every run gives the same picture.
+      Draws the hero's parallax layers: the mountains around Bogor (Gunung Salak) in the site's
+      palette, at one of four times of day: ?phase=dusk (the default), dawn, day or night.
+      Seeded, so every run gives the same picture.
       window.exportLayers() returns { sky, far, clouds, wisps, near } as WebP data URLs (all but sky keep alpha),
       plus lighter phone copies: sky-m (sky with the clouds baked in), far-m and near-m.
       generate.mjs calls it and writes public/hero-layers/*.webp. Open this file to preview.
@@ -34,6 +35,84 @@
         coral: '#ee6a48',
         coralDeep: '#c8502f',
       }
+
+      // ---------- the light, per time of day. dusk is the original picture, value for value.
+      const PHASES = {
+        dusk: {
+          sun: { x: 0.36, y: 0.6 },
+          sky: [[0, '#060b18'], [0.3, '#0d1830'], [0.5, '#1f2e4f'], [0.6, '#5a3a4a'], [0.68, '#b5543a'], [0.75, '#c8502f'], [1, '#2a1a24']],
+          glow: '238,106,72', glowA: [0.75, 0.3], glowR: 0.55,
+          disc: { r: 150, stops: [[0, 'rgba(255,214,190,1)'], [0.55, 'rgba(250,150,110,0.95)'], [0.75, 'rgba(238,106,72,0.5)'], [1, 'rgba(238,106,72,0)']] },
+          streakWarm: '238,120,90', streakCold: '207,226,241', streakA: [0.08, 0.1, 0.04, 0.06],
+          stars: 260, starDepth: 0.42, starA: 1,
+          far1: [[0, 'rgba(120,96,120,0.75)'], [0.4, 'rgba(70,70,100,0.9)'], [1, 'rgba(40,46,74,1)']],
+          mistWarm: 'rgb(238,140,110)', mistWarmA: 0.25,
+          salak: [[0, 'rgba(84,102,140,1)'], [0.35, 'rgba(46,62,98,1)'], [1, 'rgba(24,36,64,1)']],
+          rim: '238,140,110', rimA: [0.45, 0.3],
+          far2: [[0, 'rgba(40,56,92,1)'], [1, 'rgba(18,28,52,1)']],
+          mistCool: 'rgb(169,182,204)', mistCoolA: [0.22, 0.12],
+          nearMid: '#111c36', near: '#0a1226', rimNear: 'rgba(238,106,72,0.35)',
+          cloudSun: [1.0, 0.52, 0.3, 9.0], cloudTop: [0.07, 0.1, 0.22], cloudLow: [0.3, 0.16, 0.2],
+          wispCool: [150, 140, 170], wispWarm: [244, 168, 132],
+        },
+        // first light from the east (the right): pink and gold, the last stars going
+        dawn: {
+          sun: { x: 0.74, y: 0.62 },
+          sky: [[0, '#0a1430'], [0.3, '#1c2b55'], [0.5, '#475284'], [0.6, '#8c6f96'], [0.68, '#e0a08f'], [0.75, '#f3c09a'], [1, '#3b2c3e']],
+          glow: '247,178,150', glowA: [0.7, 0.28], glowR: 0.5,
+          disc: { r: 120, stops: [[0, 'rgba(255,240,220,1)'], [0.55, 'rgba(255,205,170,0.95)'], [0.75, 'rgba(247,178,150,0.5)'], [1, 'rgba(247,178,150,0)']] },
+          streakWarm: '250,190,165', streakCold: '207,226,241', streakA: [0.1, 0.12, 0.05, 0.06],
+          stars: 110, starDepth: 0.3, starA: 0.55,
+          far1: [[0, 'rgba(150,130,165,0.75)'], [0.4, 'rgba(96,98,138,0.9)'], [1, 'rgba(52,60,96,1)']],
+          mistWarm: 'rgb(250,190,165)', mistWarmA: 0.3,
+          salak: [[0, 'rgba(98,116,160,1)'], [0.35, 'rgba(56,74,114,1)'], [1, 'rgba(28,40,70,1)']],
+          rim: '250,190,165', rimA: [0.45, 0.3],
+          far2: [[0, 'rgba(46,62,100,1)'], [1, 'rgba(20,30,56,1)']],
+          mistCool: 'rgb(196,200,226)', mistCoolA: [0.26, 0.14],
+          nearMid: '#121e3a', near: '#0a1226', rimNear: 'rgba(247,178,150,0.3)',
+          cloudSun: [1.0, 0.72, 0.58, 8.0], cloudTop: [0.14, 0.16, 0.3], cloudLow: [0.42, 0.3, 0.38],
+          wispCool: [170, 166, 196], wispWarm: [252, 206, 182],
+        },
+        // a clear tropical afternoon: the sun high and white, the far ranges blue with distance
+        day: {
+          sun: { x: 0.7, y: 0.16 },
+          sky: [[0, '#0f2b5c'], [0.3, '#1d4a88'], [0.5, '#3a74b4'], [0.6, '#6a9fd0'], [0.68, '#a6c9e6'], [0.75, '#c7def0'], [1, '#5c7896']],
+          glow: '255,250,235', glowA: [0.55, 0.12], glowR: 0.35,
+          disc: { r: 80, stops: [[0, 'rgba(255,255,250,1)'], [0.55, 'rgba(255,250,232,0.95)'], [0.75, 'rgba(255,246,220,0.45)'], [1, 'rgba(255,246,220,0)']] },
+          streakWarm: '255,255,255', streakCold: '255,255,255', streakA: [0.05, 0.06, 0.05, 0.06],
+          stars: 0, starDepth: 0.42, starA: 0,
+          far1: [[0, 'rgba(140,172,212,0.8)'], [0.4, 'rgba(104,138,184,0.92)'], [1, 'rgba(70,98,140,1)']],
+          mistWarm: 'rgb(220,234,246)', mistWarmA: 0.3,
+          salak: [[0, 'rgba(92,124,170,1)'], [0.35, 'rgba(56,82,124,1)'], [1, 'rgba(30,46,80,1)']],
+          rim: '233,241,248', rimA: [0.3, 0.2],
+          far2: [[0, 'rgba(44,66,104,1)'], [1, 'rgba(20,32,58,1)']],
+          mistCool: 'rgb(207,226,241)', mistCoolA: [0.3, 0.16],
+          nearMid: '#13213f', near: '#0b1429', rimNear: 'rgba(233,241,248,0.18)',
+          cloudSun: [1.0, 0.98, 0.94, 7.0], cloudTop: [0.42, 0.56, 0.78], cloudLow: [0.58, 0.68, 0.82],
+          wispCool: [200, 216, 236], wispWarm: [236, 242, 250],
+        },
+        // a clear night: the moon high in the east, the sky full of stars, everything silver
+        night: {
+          sun: { x: 0.72, y: 0.2 },
+          sky: [[0, '#03060f'], [0.3, '#060c1c'], [0.5, '#0c1730'], [0.6, '#132144'], [0.68, '#1a2a52'], [0.75, '#1e2f5a'], [1, '#090e1e']],
+          glow: '207,226,241', glowA: [0.22, 0.06], glowR: 0.3,
+          disc: { r: 46, stops: [[0, 'rgba(240,246,252,1)'], [0.7, 'rgba(226,236,248,1)'], [0.85, 'rgba(207,226,241,0.35)'], [1, 'rgba(207,226,241,0)']] },
+          streakWarm: '169,182,204', streakCold: '169,182,204', streakA: [0.03, 0.05, 0.03, 0.05],
+          stars: 900, starDepth: 0.62, starA: 1.15,
+          far1: [[0, 'rgba(60,72,104,0.75)'], [0.4, 'rgba(36,46,76,0.9)'], [1, 'rgba(22,30,54,1)']],
+          mistWarm: 'rgb(120,140,180)', mistWarmA: 0.14,
+          salak: [[0, 'rgba(46,60,92,1)'], [0.35, 'rgba(28,40,68,1)'], [1, 'rgba(16,24,44,1)']],
+          rim: '169,182,204', rimA: [0.32, 0.2],
+          far2: [[0, 'rgba(24,36,62,1)'], [1, 'rgba(12,20,38,1)']],
+          mistCool: 'rgb(120,140,180)', mistCoolA: [0.16, 0.08],
+          nearMid: '#0c152b', near: '#070d1d', rimNear: 'rgba(169,182,204,0.18)',
+          cloudSun: [0.62, 0.72, 0.92, 2.4], cloudTop: [0.02, 0.03, 0.07], cloudLow: [0.05, 0.07, 0.14],
+          wispCool: [64, 76, 108], wispWarm: [150, 166, 200],
+        },
+      }
+      const asked = new URLSearchParams(location.search).get('phase')
+      const PHASE = asked in PHASES ? asked : 'dusk'
+      const PH = PHASES[PHASE]
 
       // seeded random
       const rng = (seed) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646
@@ -105,41 +184,30 @@
         return c
       }
 
-      // the sun sits low, left of centre, behind the far range
-      const SUN = { x: W * 0.36, y: H * 0.6 }
+      // the sun (the moon at night): low behind the range at dusk and dawn, high by day and night
+      const SUN = { x: W * PH.sun.x, y: H * PH.sun.y }
 
       // ---------- 1. sky (opaque)
       function drawSky() {
         const c = canvas()
         const ctx = c.getContext('2d')
-        ctx.fillStyle = vgrad(ctx, 0, H, [
-          [0, '#060b18'],
-          [0.3, '#0d1830'],
-          [0.5, '#1f2e4f'],
-          [0.6, '#5a3a4a'],
-          [0.68, '#b5543a'],
-          [0.75, '#c8502f'],
-          [1, '#2a1a24'],
-        ])
+        ctx.fillStyle = vgrad(ctx, 0, H, PH.sky)
         ctx.fillRect(0, 0, W, H)
 
-        // warm light pooling around the sun
-        let g = ctx.createRadialGradient(SUN.x, SUN.y, 0, SUN.x, SUN.y, W * 0.55)
-        g.addColorStop(0, 'rgba(238,106,72,0.75)')
-        g.addColorStop(0.25, 'rgba(238,106,72,0.3)')
-        g.addColorStop(1, 'rgba(238,106,72,0)')
+        // light pooling around the sun
+        let g = ctx.createRadialGradient(SUN.x, SUN.y, 0, SUN.x, SUN.y, W * PH.glowR)
+        g.addColorStop(0, `rgba(${PH.glow},${PH.glowA[0]})`)
+        g.addColorStop(0.25, `rgba(${PH.glow},${PH.glowA[1]})`)
+        g.addColorStop(1, `rgba(${PH.glow},0)`)
         ctx.fillStyle = g
         ctx.fillRect(0, 0, W, H)
 
         // the sun disc, soft edged
-        g = ctx.createRadialGradient(SUN.x, SUN.y, 0, SUN.x, SUN.y, 150)
-        g.addColorStop(0, 'rgba(255,214,190,1)')
-        g.addColorStop(0.55, 'rgba(250,150,110,0.95)')
-        g.addColorStop(0.75, 'rgba(238,106,72,0.5)')
-        g.addColorStop(1, 'rgba(238,106,72,0)')
+        g = ctx.createRadialGradient(SUN.x, SUN.y, 0, SUN.x, SUN.y, PH.disc.r)
+        for (const [at, color] of PH.disc.stops) g.addColorStop(at, color)
         ctx.fillStyle = g
         ctx.beginPath()
-        ctx.arc(SUN.x, SUN.y, 150, 0, Math.PI * 2)
+        ctx.arc(SUN.x, SUN.y, PH.disc.r, 0, Math.PI * 2)
         ctx.fill()
 
         // thin cloud streaks lit from below
@@ -149,16 +217,16 @@
           const x = r() * W
           const w = 300 + r() * 700
           const warm = y > H * 0.48
-          ctx.fillStyle = warm ? `rgba(238,120,90,${0.08 + r() * 0.1})` : `rgba(207,226,241,${0.04 + r() * 0.06})`
+          ctx.fillStyle = warm ? `rgba(${PH.streakWarm},${PH.streakA[0] + r() * PH.streakA[1]})` : `rgba(${PH.streakCold},${PH.streakA[2] + r() * PH.streakA[3]})`
           ctx.beginPath()
           ctx.ellipse(x, y, w, 3 + r() * 6, 0, 0, Math.PI * 2)
           ctx.fill()
         }
 
         // stars in the cold top of the sky
-        for (let i = 0; i < 260; i++) {
-          const y = Math.pow(r(), 1.8) * H * 0.42
-          const a = (1 - y / (H * 0.42)) * (0.25 + r() * 0.6)
+        for (let i = 0; i < PH.stars; i++) {
+          const y = Math.pow(r(), 1.8) * H * PH.starDepth
+          const a = Math.min(1, (1 - y / (H * PH.starDepth)) * (0.25 + r() * 0.6) * PH.starA)
           ctx.fillStyle = `rgba(233,241,248,${a})`
           ctx.beginPath()
           ctx.arc(r() * W, y, 0.6 + r() * 1.6, 0, Math.PI * 2)
@@ -174,8 +242,8 @@
 
         // farthest line of hills, nearly the colour of the sky
         const f1 = ridge({ seed: 21, base: H * 0.63, rough: 0.9, amp: 120, smooth: 3 })
-        fillRidge(ctx, f1, vgrad(ctx, H * 0.55, H, [[0, 'rgba(120,96,120,0.75)'], [0.4, 'rgba(70,70,100,0.9)'], [1, 'rgba(40,46,74,1)']]))
-        mist(ctx, H * 0.7, 60, 'rgb(238,140,110)', 0.25)
+        fillRidge(ctx, f1, vgrad(ctx, H * 0.55, H, PH.far1))
+        mist(ctx, H * 0.7, 60, PH.mistWarm, PH.mistWarmA)
 
         // Gunung Salak: a broad massif with a crown of jagged peaks
         const salak = ridge({
@@ -192,9 +260,9 @@
             { x: W * 0.5, w: W * 0.04, h: H * 0.025, k: 1 },
           ],
         })
-        fillRidge(ctx, salak, vgrad(ctx, H * 0.48, H, [[0, 'rgba(84,102,140,1)'], [0.35, 'rgba(46,62,98,1)'], [1, 'rgba(24,36,64,1)']]))
-        // sunset light catching the edges
-        strokeRidge(ctx, salak, 'rgba(238,140,110,0.45)', 2)
+        fillRidge(ctx, salak, vgrad(ctx, H * 0.48, H, PH.salak))
+        // the light catching the edges
+        strokeRidge(ctx, salak, `rgba(${PH.rim},${PH.rimA[0]})`, 2)
 
         // a second range on the left, Pangrango-like, a step nearer
         const f2 = ridge({
@@ -205,9 +273,9 @@
           smooth: 1,
           peaks: [{ x: W * 0.14, w: W * 0.16, h: H * 0.15 }],
         })
-        fillRidge(ctx, f2, vgrad(ctx, H * 0.6, H, [[0, 'rgba(40,56,92,1)'], [1, 'rgba(18,28,52,1)']]))
-        strokeRidge(ctx, f2, 'rgba(238,140,110,0.3)', 2)
-        mist(ctx, H * 0.84, 70, 'rgb(169,182,204)', 0.22)
+        fillRidge(ctx, f2, vgrad(ctx, H * 0.6, H, PH.far2))
+        strokeRidge(ctx, f2, `rgba(${PH.rim},${PH.rimA[1]})`, 2)
+        mist(ctx, H * 0.84, 70, PH.mistCool, PH.mistCoolA[0])
         return c
       }
 
@@ -217,12 +285,12 @@
         const ctx = c.getContext('2d')
 
         const mid = ridge({ seed: 51, base: H * 0.83, rough: 1.0, amp: 120, smooth: 2, peaks: [{ x: W * 0.85, w: W * 0.12, h: H * 0.07 }] })
-        fillRidge(ctx, mid, '#111c36')
-        strokeRidge(ctx, mid, 'rgba(238,106,72,0.35)', 2)
-        mist(ctx, H * 0.9, 50, 'rgb(169,182,204)', 0.12)
+        fillRidge(ctx, mid, PH.nearMid)
+        strokeRidge(ctx, mid, PH.rimNear, 2)
+        mist(ctx, H * 0.9, 50, PH.mistCool, PH.mistCoolA[1])
 
         const near = ridge({ seed: 64, base: H * 0.91, rough: 0.8, amp: 90, smooth: 3, peaks: [{ x: W * 0.12, w: W * 0.18, h: H * 0.06 }] })
-        fillRidge(ctx, near, '#0a1226')
+        fillRidge(ctx, near, PH.near)
 
         // pines along the near ridge
         const r = rng(77)
@@ -244,12 +312,12 @@
         for (let x = 0; x < W; x += 18 + r() * 34) {
           if (r() < 0.35) continue
           const h = 40 + r() * 120
-          tree(x, mid(x) + 6, h * 0.7, '#111c36')
+          tree(x, mid(x) + 6, h * 0.7, PH.nearMid)
         }
         for (let x = 0; x < W; x += 14 + r() * 26) {
           if (r() < 0.2) continue
           const h = 60 + r() * 160
-          tree(x, near(x) + 8, h, '#0a1226')
+          tree(x, near(x) + 8, h, PH.near)
         }
 
         // fade the foot into the page ground so the hero hands over cleanly
@@ -323,6 +391,9 @@
           uniform vec2 res;
           uniform vec2 sunPx;
           uniform float horizon;
+          uniform vec4 sunLight; // colour and strength of the sun (or moon)
+          uniform vec3 skyTop;
+          uniform vec3 skyLow;
           float hash(vec3 p) {
             p = fract(p * 0.3183099 + vec3(0.71, 0.113, 0.419));
             p *= 17.0;
@@ -370,9 +441,7 @@
             float dt = (t1 - t0) / float(STEPS);
             float cosA = dot(dir, sun);
             float phase = mix(hg(cosA, -0.15), hg(cosA, 0.75), 0.55);
-            vec3 sunCol = vec3(1.0, 0.52, 0.30) * 9.0;
-            vec3 skyTop = vec3(0.07, 0.10, 0.22);
-            vec3 skyLow = vec3(0.30, 0.16, 0.20);
+            vec3 sunCol = sunLight.rgb * sunLight.a;
             vec3 col = vec3(0.0);
             float T = 1.0;
             float jitter = 0.5 + (hash(vec3(px, 1.0)) - 0.5) * 0.35; // a little dither, no visible grain
@@ -426,6 +495,9 @@
         gl.uniform2f(gl.getUniformLocation(prog, 'res'), w, h)
         gl.uniform2f(gl.getUniformLocation(prog, 'sunPx'), SUN.x, SUN.y)
         gl.uniform1f(gl.getUniformLocation(prog, 'horizon'), H * 0.64)
+        gl.uniform4f(gl.getUniformLocation(prog, 'sunLight'), ...PH.cloudSun)
+        gl.uniform3f(gl.getUniformLocation(prog, 'skyTop'), ...PH.cloudTop)
+        gl.uniform3f(gl.getUniformLocation(prog, 'skyLow'), ...PH.cloudLow)
         gl.viewport(0, 0, w, h)
         gl.clearColor(0, 0, 0, 0)
         gl.clear(gl.COLOR_BUFFER_BIT)
@@ -457,7 +529,7 @@
             const d = smooth(0.42, 0.75, n) * band
             if (d <= 0.002) continue
             const near = Math.exp(-Math.abs(x - SUN.x) / (W * 0.3))
-            const col = mix([150, 140, 170], [244, 168, 132], near * 0.8)
+            const col = mix(PH.wispCool, PH.wispWarm, near * 0.8)
             const k = (j * w + i) * 4
             out.data[k] = col[0]
             out.data[k + 1] = col[1]

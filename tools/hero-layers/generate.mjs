@@ -1,6 +1,8 @@
-// Writes the hero's parallax layers from layers.html into public/hero-layers/*.webp.
-//   node tools/hero-layers/generate.mjs           (layers)
-//   node tools/hero-layers/generate.mjs preview   (also saves a flattened preview.jpg here)
+// Writes the hero's parallax layers from layers.html, for each time of day: dusk into
+// public/hero-layers/*.webp, dawn, day and night into public/hero-layers/<phase>/*.webp.
+//   node tools/hero-layers/generate.mjs                  (all four)
+//   node tools/hero-layers/generate.mjs night day        (just these)
+//   PREVIEW=dir node tools/hero-layers/generate.mjs     (also a flattened <phase>.jpg in dir)
 // Uses the machine's Chrome over the DevTools protocol (Node's built-in WebSocket); nothing to install.
 import fs from 'node:fs'
 import path from 'node:path'
@@ -67,24 +69,29 @@ const evalJS = async (expression) => {
 try {
   await send('Page.enable')
   await send('Runtime.enable')
-  await send('Page.navigate', { url: 'http://127.0.0.1:5394/layers.html' })
-  for (let i = 0; i < 80; i++) {
-    try {
-      if (await evalJS('typeof window.exportLayers === "function"')) break
-    } catch {}
-    await sleep(100)
-  }
-  const layers = await evalJS('window.exportLayers()')
-  fs.mkdirSync(OUT, { recursive: true })
-  for (const [name, url] of Object.entries(layers)) {
-    const file = path.join(OUT, `${name}.webp`)
-    fs.writeFileSync(file, Buffer.from(url.split(',')[1], 'base64'))
-    console.log(name, `${(fs.statSync(file).size / 1024).toFixed(0)} KB`)
-  }
-  if (process.argv[2] === 'preview') {
-    const r = await send('Page.captureScreenshot', { format: 'jpeg', quality: 85 })
-    fs.writeFileSync(path.join(HERE, 'preview.jpg'), Buffer.from(r.data, 'base64'))
-    console.log('preview.jpg')
+  const PHASES = ['dusk', 'dawn', 'day', 'night']
+  const wanted = process.argv.slice(2).filter((p) => PHASES.includes(p))
+  for (const phase of wanted.length ? wanted : PHASES) {
+    await send('Page.navigate', { url: `http://127.0.0.1:5394/layers.html?phase=${phase}` })
+    await sleep(300)
+    for (let i = 0; i < 120; i++) {
+      try {
+        if (await evalJS('typeof window.exportLayers === "function"')) break
+      } catch {}
+      await sleep(100)
+    }
+    const layers = await evalJS('window.exportLayers()')
+    const dir = phase === 'dusk' ? OUT : path.join(OUT, phase)
+    fs.mkdirSync(dir, { recursive: true })
+    for (const [name, url] of Object.entries(layers)) {
+      const file = path.join(dir, `${name}.webp`)
+      fs.writeFileSync(file, Buffer.from(url.split(',')[1], 'base64'))
+      console.log(phase, name, `${(fs.statSync(file).size / 1024).toFixed(0)} KB`)
+    }
+    if (process.env.PREVIEW) {
+      const r = await send('Page.captureScreenshot', { format: 'jpeg', quality: 85 })
+      fs.writeFileSync(path.join(process.env.PREVIEW, `${phase}.jpg`), Buffer.from(r.data, 'base64'))
+    }
   }
 } finally {
   try {

@@ -6,24 +6,13 @@ import { ParallaxComponent } from './ui/parallax-scrolling'
 import Button from './Button'
 import Tag from './Tag'
 import RevealText from './RevealText'
+import { heroLayers, skyPhase } from '../lib/skyPhase'
 
 const ease = [0.22, 1, 0.36, 1]
 
-// Dusk over the mountains around Bogor, drawn by tools/hero-layers (far to near)
-const LAYERS = {
-  back: '/hero-layers/sky.webp',
-  clouds: '/hero-layers/clouds.webp', // a sunset cloud deck behind the mountains, rendered as a volume
-  middle: '/hero-layers/far.webp',
-  wisps: '/hero-layers/wisps.webp', // low mist at the foot of the mountains
-  front: '/hero-layers/near.webp',
-  // phones: smaller files and the clouds baked into the sky, so four layers move instead of five
-  mobile: {
-    back: '/hero-layers/sky-m.webp',
-    middle: '/hero-layers/far-m.webp',
-    wisps: '/hero-layers/wisps.webp',
-    front: '/hero-layers/near-m.webp',
-  },
-}
+// The mountains around Bogor, drawn by tools/hero-layers (far to near), under the sky it is in
+// Bogor right now: dawn, day, dusk or night. Only that one set of pictures is downloaded.
+const LAYERS = heroLayers(skyPhase())
 
 /** `ready`: false while the loading screen is up, so the entrance plays as the curtain lifts. */
 export default function Hero({ ready = true }) {
